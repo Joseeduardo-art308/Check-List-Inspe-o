@@ -40,14 +40,7 @@ function ensureDefaultUsers() {
     return;
   }
 
-  const defaultUsers = [
-    { username: 'usuario1', password: '1', role: 'Operador', name: 'Usuário 1' },
-    { username: 'usuario2', password: '2', role: 'Operador', name: 'Usuário 2' },
-    { username: 'usuario3', password: '3', role: 'Operador', name: 'Usuário 3' },
-    { username: 'usuario4', password: '4', role: 'Operador', name: 'Usuário 4' },
-    { username: 'usuario5', password: '5', role: 'Operador', name: 'Usuário 5' }
-  ];
-
+  const defaultUsers = [];
   localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
 }
 
@@ -55,6 +48,10 @@ function loginUser(username, password) {
   const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
   const normalizedUsername = username.trim();
   const normalizedPassword = String(password).trim();
+
+  if (!normalizedUsername) {
+    return null;
+  }
 
   const match = users.find((user) => {
     const storedUsername = String(user.username || '').trim();
@@ -66,19 +63,27 @@ function loginUser(username, password) {
     return match;
   }
 
-  if (['1', '2', '3', '4', '5'].includes(normalizedPassword)) {
-    const customUser = {
-      username: normalizedUsername,
-      password: normalizedPassword,
-      role: 'Operador',
-      name: normalizedUsername
-    };
-    users.push(customUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    return customUser;
+  const existingUser = users.find((user) => {
+    const storedUsername = String(user.username || '').trim();
+    const storedName = String(user.name || '').trim();
+    return storedUsername === normalizedUsername || storedName === normalizedUsername;
+  });
+
+  if (existingUser) {
+    return null;
   }
 
-  return null;
+  const defaultPassword = normalizedPassword || '123456';
+  const customUser = {
+    username: normalizedUsername,
+    password: defaultPassword,
+    role: 'Operador',
+    name: normalizedUsername
+  };
+
+  users.push(customUser);
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  return customUser;
 }
 
 function setActiveUser(user) {
@@ -299,8 +304,8 @@ if (loginForm) {
     const username = usernameInput ? usernameInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value.trim() : '';
 
-    if (!username || !password) {
-      alert('Informe usuário e senha para continuar.');
+    if (!username) {
+      alert('Informe o nome do usuário para continuar.');
       return;
     }
 
@@ -311,7 +316,13 @@ if (loginForm) {
     }
 
     setActiveUser(user);
-    alert(`Login realizado com sucesso. Bem-vindo, ${user.username}!`);
+
+    if (user.password === (password || '123456')) {
+      alert(`Usuário criado com sucesso. Bem-vindo, ${user.name}! Sua senha de primeiro acesso foi definida automaticamente.`);
+      return;
+    }
+
+    alert(`Login realizado com sucesso. Bem-vindo, ${user.name}!`);
   });
 }
 
