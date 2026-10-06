@@ -1,6 +1,7 @@
 const form = document.getElementById('inspectionForm');
 const reportOutput = document.getElementById('reportOutput');
 const generateReportButton = document.getElementById('generateReport');
+let checklistSaved = false;
 
 const itemLabels = {
   oil: 'Nível de óleo do motor',
@@ -21,6 +22,32 @@ const itemLabels = {
   windows: 'Vidros e limpa-vidros',
   documents: 'Documentação do veículo e habilitação',
 };
+
+function getLocalDateTime() {
+  const now = new Date();
+
+  const pad = (value) => String(value).padStart(2, '0');
+
+  const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  return { date, time };
+}
+
+function setCurrentDateTime() {
+  const dateInput = document.getElementById('date');
+  const timeInput = document.getElementById('time');
+
+  const { date, time } = getLocalDateTime();
+
+  if (dateInput && !dateInput.value) {
+    dateInput.value = date;
+  }
+
+  if (timeInput && !timeInput.value) {
+    timeInput.value = time;
+  }
+}
 
 function getFormData() {
   const formData = new FormData(form);
@@ -91,18 +118,29 @@ ${observations}
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
+
+  const vehicle = form.elements.vehicle.value.trim();
+  if (!vehicle) {
+    alert('Preencha a identificação do veículo antes de salvar.');
+    return;
+  }
+
+  checklistSaved = true;
+  generateReportButton.disabled = false;
   buildReport();
   alert('Inspeção salva com sucesso!');
 });
 
-generateReportButton.addEventListener('click', buildReport);
-
-document.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('date');
-  if (dateInput) {
-    dateInput.value = today;
+generateReportButton.addEventListener('click', () => {
+  if (!checklistSaved) {
+    alert('Salve a inspeção antes de gerar o relatório.');
+    return;
   }
 
   buildReport();
+  alert('Relatório gerado com sucesso!');
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  setCurrentDateTime();
 });

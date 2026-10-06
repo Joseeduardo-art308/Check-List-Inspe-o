@@ -188,6 +188,11 @@ button.secondary:hover {
   background: #d7e8f7;
 }
 
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .report-panel {
   background: #f8fbff;
 }
