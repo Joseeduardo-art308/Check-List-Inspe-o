@@ -62,6 +62,17 @@ function getFormData() {
   return values;
 }
 
+function getPhotoNames() {
+  const photoInput = document.getElementById('photos');
+  const files = photoInput && photoInput.files ? photoInput.files : [];
+
+  if (!files.length) {
+    return 'Nenhuma foto anexada.';
+  }
+
+  return Array.from(files).map((file) => file.name).join(', ');
+}
+
 function buildReport() {
   const data = getFormData();
   const vehicle = data.vehicle || 'Não informado';
@@ -71,6 +82,7 @@ function buildReport() {
   const responsible = data.maintenanceResponsible || 'Não informado';
   const location = data.location || 'Não informado';
   const observations = data.observations || 'Nenhuma observação registrada.';
+  const photoNames = getPhotoNames();
   const severity = data.severity || 'Baixa';
 
   const issues = [];
@@ -104,6 +116,9 @@ ${hasIssue ? issues.join('\n') : '- Nenhum item em não conformidade.'}
 
 Observações:
 ${observations}
+
+Fotos anexadas:
+${photoNames}
 `;
 
   reportOutput.textContent = report;
