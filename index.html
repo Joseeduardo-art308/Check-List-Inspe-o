@@ -7,250 +7,295 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <header class="header">
-        <h1>Checklist de Inspeção da Frota</h1>
-        <p>Registro de inspeção preventiva e manutenção</p>
-      </header>
+    <div id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Controle de Frota</h1>
+          <p>Faça login para acessar o checklist e o histórico de inspeções.</p>
+        </div>
 
-      <main>
-        <form id="inspectionForm">
-          <section class="panel">
-            <h2>Dados da inspeção</h2>
-            <div class="grid two-columns">
-              <label>
-                <span>Placa / Identificação do veículo</span>
-                <input type="text" id="vehicle" name="vehicle" placeholder="Ex.: ABC-1234" required />
-              </label>
+        <form id="loginForm" class="login-form">
+          <label>
+            <span>Usuário</span>
+            <input type="text" id="username" name="username" placeholder="Ex.: usuario1" required />
+          </label>
 
-              <label>
-                <span>Data da inspeção</span>
-                <input type="date" id="date" name="date" required />
-              </label>
+          <label>
+            <span>Senha</span>
+            <input type="password" id="password" name="password" placeholder="Ex.: 1" required />
+          </label>
 
-              <label>
-                <span>Hora</span>
-                <input type="time" id="time" name="time" required />
-              </label>
-
-              <label>
-                <span>Operador</span>
-                <input type="text" id="operator" name="operator" placeholder="Nome do operador" required />
-              </label>
-
-              <label>
-                <span>Responsável pela manutenção</span>
-                <input type="text" id="maintenanceResponsible" name="maintenanceResponsible" placeholder="Nome do responsável" />
-              </label>
-
-              <label>
-                <span>Local da inspeção</span>
-                <select id="location" name="location">
-                  <option value="Pátio">Pátio</option>
-                  <option value="Oficina">Oficina</option>
-                  <option value="Garagem">Garagem</option>
-                  <option value="Base">Base</option>
-                  <option value="Posto">Posto</option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section class="panel">
-            <h2>Itens de inspeção</h2>
-
-            <div class="section-subtitle">Motor e Fluídos</div>
-            <div class="inspection-item">
-              <span class="item-name">Nível de óleo do motor</span>
-              <div class="status-group">
-                <label><input type="radio" name="oil" value="OK" checked /> OK</label>
-                <label><input type="radio" name="oil" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="oil" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Nível do líquido de arrefecimento</span>
-              <div class="status-group">
-                <label><input type="radio" name="coolant" value="OK" checked /> OK</label>
-                <label><input type="radio" name="coolant" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="coolant" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Nível de combustível</span>
-              <div class="status-group">
-                <label><input type="radio" name="fuel" value="OK" checked /> OK</label>
-                <label><input type="radio" name="fuel" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="fuel" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Vazamentos de óleo, água ou combustível</span>
-              <div class="status-group">
-                <label><input type="radio" name="leaks" value="OK" checked /> OK</label>
-                <label><input type="radio" name="leaks" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="leaks" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Bateria e conexões</span>
-              <div class="status-group">
-                <label><input type="radio" name="battery" value="OK" checked /> OK</label>
-                <label><input type="radio" name="battery" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="battery" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="section-subtitle">Pneus, Freios e Direção</div>
-            <div class="inspection-item">
-              <span class="item-name">Condição dos pneus</span>
-              <div class="status-group">
-                <label><input type="radio" name="tires" value="OK" checked /> OK</label>
-                <label><input type="radio" name="tires" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="tires" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Pressão dos pneus</span>
-              <div class="status-group">
-                <label><input type="radio" name="tirePressure" value="OK" checked /> OK</label>
-                <label><input type="radio" name="tirePressure" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="tirePressure" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Sistema de freios</span>
-              <div class="status-group">
-                <label><input type="radio" name="brakes" value="OK" checked /> OK</label>
-                <label><input type="radio" name="brakes" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="brakes" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Sistema de direção e suspensão</span>
-              <div class="status-group">
-                <label><input type="radio" name="suspension" value="OK" checked /> OK</label>
-                <label><input type="radio" name="suspension" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="suspension" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="section-subtitle">Segurança e Iluminação</div>
-            <div class="inspection-item">
-              <span class="item-name">Faróis, lanternas e indicadores</span>
-              <div class="status-group">
-                <label><input type="radio" name="lights" value="OK" checked /> OK</label>
-                <label><input type="radio" name="lights" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="lights" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Seta e buzina</span>
-              <div class="status-group">
-                <label><input type="radio" name="signals" value="OK" checked /> OK</label>
-                <label><input type="radio" name="signals" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="signals" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Espelhos retrovisores e visibilidade</span>
-              <div class="status-group">
-                <label><input type="radio" name="mirrors" value="OK" checked /> OK</label>
-                <label><input type="radio" name="mirrors" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="mirrors" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Cinto de segurança e equipamentos de proteção</span>
-              <div class="status-group">
-                <label><input type="radio" name="safety" value="OK" checked /> OK</label>
-                <label><input type="radio" name="safety" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="safety" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="section-subtitle">Cabine e Estrutura</div>
-            <div class="inspection-item">
-              <span class="item-name">Estado visual da cabine e carroceria</span>
-              <div class="status-group">
-                <label><input type="radio" name="body" value="OK" checked /> OK</label>
-                <label><input type="radio" name="body" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="body" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Portas, travas e fechaduras</span>
-              <div class="status-group">
-                <label><input type="radio" name="doors" value="OK" checked /> OK</label>
-                <label><input type="radio" name="doors" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="doors" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Vidros e limpa-vidros</span>
-              <div class="status-group">
-                <label><input type="radio" name="windows" value="OK" checked /> OK</label>
-                <label><input type="radio" name="windows" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="windows" value="N/A" /> N/A</label>
-              </div>
-            </div>
-
-            <div class="inspection-item">
-              <span class="item-name">Documentação do veículo e habilitação</span>
-              <div class="status-group">
-                <label><input type="radio" name="documents" value="OK" checked /> OK</label>
-                <label><input type="radio" name="documents" value="Não OK" /> Não OK</label>
-                <label><input type="radio" name="documents" value="N/A" /> N/A</label>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel">
-            <h2>Observações e manutenção</h2>
-            <label>
-              <span>Descrição das irregularidades</span>
-              <textarea id="observations" name="observations" rows="5" placeholder="Descreva falhas, vazamentos, desgastes ou outras pendências."></textarea>
-            </label>
-
-            <label>
-              <span>Anexar fotos da irregularidade</span>
-              <input type="file" id="photos" name="photos" accept="image/*" multiple />
-            </label>
-
-            <label>
-              <span>Severidade da ocorrência</span>
-              <select id="severity" name="severity">
-                <option value="Baixa">Baixa</option>
-                <option value="Média">Média</option>
-                <option value="Alta">Alta</option>
-                <option value="Crítica">Crítica</option>
-              </select>
-            </label>
-          </section>
-
-          <div class="actions">
-            <button type="submit">Salvar inspeção</button>
-            <button type="button" class="secondary" id="generateReport" disabled>Gerar relatório</button>
-          </div>
+          <button type="submit">Entrar</button>
         </form>
 
-        <section class="panel report-panel" id="reportPanel">
-          <h2>Resumo da inspeção</h2>
-          <div id="reportOutput"></div>
-        </section>
-      </main>
+        <div class="demo-box">
+          <strong>Usuários de demonstração</strong>
+          <ul>
+            <li>Qualquer nome de usuário</li>
+            <li>Senha padrão: 1, 2, 3, 4 ou 5</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="appScreen" class="app-screen hidden">
+      <div class="container">
+        <header class="header">
+          <div>
+            <h1>Checklist de Inspeção da Frota</h1>
+            <p>Registro de inspeção preventiva e manutenção</p>
+          </div>
+          <div class="user-actions">
+            <span id="userBadge" class="user-badge">Usuário</span>
+            <button type="button" id="logoutButton" class="ghost small">Sair</button>
+          </div>
+        </header>
+
+        <main>
+          <form id="inspectionForm">
+            <section class="panel">
+              <h2>Dados da inspeção</h2>
+              <div class="grid two-columns">
+                <label>
+                  <span>Placa / Identificação do veículo</span>
+                  <input type="text" id="vehicle" name="vehicle" placeholder="Ex.: ABC-1234" required />
+                </label>
+
+                <label>
+                  <span>Data da inspeção</span>
+                  <input type="date" id="date" name="date" required />
+                </label>
+
+                <label>
+                  <span>Hora</span>
+                  <input type="time" id="time" name="time" required />
+                </label>
+
+                <label>
+                  <span>Operador</span>
+                  <input type="text" id="operator" name="operator" placeholder="Nome do operador" required />
+                </label>
+
+                <label>
+                  <span>Responsável pela manutenção</span>
+                  <input type="text" id="maintenanceResponsible" name="maintenanceResponsible" placeholder="Nome do responsável" />
+                </label>
+
+                <label>
+                  <span>Local da inspeção</span>
+                  <select id="location" name="location">
+                    <option value="Pátio">Pátio</option>
+                    <option value="Oficina">Oficina</option>
+                    <option value="Garagem">Garagem</option>
+                    <option value="Base">Base</option>
+                    <option value="Posto">Posto</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Itens de inspeção</h2>
+
+              <div class="section-subtitle">Motor e Fluídos</div>
+              <div class="inspection-item">
+                <span class="item-name">Nível de óleo do motor</span>
+                <div class="status-group">
+                  <label><input type="radio" name="oil" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="oil" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="oil" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Nível do líquido de arrefecimento</span>
+                <div class="status-group">
+                  <label><input type="radio" name="coolant" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="coolant" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="coolant" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Nível de combustível</span>
+                <div class="status-group">
+                  <label><input type="radio" name="fuel" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="fuel" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="fuel" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Vazamentos de óleo, água ou combustível</span>
+                <div class="status-group">
+                  <label><input type="radio" name="leaks" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="leaks" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="leaks" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Bateria e conexões</span>
+                <div class="status-group">
+                  <label><input type="radio" name="battery" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="battery" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="battery" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="section-subtitle">Pneus, Freios e Direção</div>
+              <div class="inspection-item">
+                <span class="item-name">Condição dos pneus</span>
+                <div class="status-group">
+                  <label><input type="radio" name="tires" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="tires" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="tires" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Pressão dos pneus</span>
+                <div class="status-group">
+                  <label><input type="radio" name="tirePressure" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="tirePressure" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="tirePressure" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Sistema de freios</span>
+                <div class="status-group">
+                  <label><input type="radio" name="brakes" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="brakes" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="brakes" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Sistema de direção e suspensão</span>
+                <div class="status-group">
+                  <label><input type="radio" name="suspension" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="suspension" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="suspension" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="section-subtitle">Segurança e Iluminação</div>
+              <div class="inspection-item">
+                <span class="item-name">Faróis, lanternas e indicadores</span>
+                <div class="status-group">
+                  <label><input type="radio" name="lights" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="lights" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="lights" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Seta e buzina</span>
+                <div class="status-group">
+                  <label><input type="radio" name="signals" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="signals" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="signals" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Espelhos retrovisores e visibilidade</span>
+                <div class="status-group">
+                  <label><input type="radio" name="mirrors" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="mirrors" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="mirrors" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Cinto de segurança e equipamentos de proteção</span>
+                <div class="status-group">
+                  <label><input type="radio" name="safety" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="safety" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="safety" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="section-subtitle">Cabine e Estrutura</div>
+              <div class="inspection-item">
+                <span class="item-name">Estado visual da cabine e carroceria</span>
+                <div class="status-group">
+                  <label><input type="radio" name="body" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="body" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="body" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Portas, travas e fechaduras</span>
+                <div class="status-group">
+                  <label><input type="radio" name="doors" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="doors" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="doors" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Vidros e limpa-vidros</span>
+                <div class="status-group">
+                  <label><input type="radio" name="windows" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="windows" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="windows" value="N/A" /> N/A</label>
+                </div>
+              </div>
+
+              <div class="inspection-item">
+                <span class="item-name">Documentação do veículo e habilitação</span>
+                <div class="status-group">
+                  <label><input type="radio" name="documents" value="OK" checked /> OK</label>
+                  <label><input type="radio" name="documents" value="Não OK" /> Não OK</label>
+                  <label><input type="radio" name="documents" value="N/A" /> N/A</label>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Observações e manutenção</h2>
+              <label>
+                <span>Descrição das irregularidades</span>
+                <textarea id="observations" name="observations" rows="5" placeholder="Descreva falhas, vazamentos, desgastes ou outras pendências."></textarea>
+              </label>
+
+              <label>
+                <span>Anexar fotos da irregularidade</span>
+                <input type="file" id="photos" name="photos" accept="image/*" multiple />
+              </label>
+
+              <label>
+                <span>Severidade da ocorrência</span>
+                <select id="severity" name="severity">
+                  <option value="Baixa">Baixa</option>
+                  <option value="Média">Média</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Crítica">Crítica</option>
+                </select>
+              </label>
+            </section>
+
+            <div class="actions">
+              <button type="submit">Salvar inspeção</button>
+              <button type="button" class="secondary" id="generateReport" disabled>Gerar relatório</button>
+              <button type="button" class="ghost" id="clearForm">Limpar formulário</button>
+            </div>
+          </form>
+
+          <section class="panel report-panel" id="reportPanel">
+            <h2>Resumo da inspeção</h2>
+            <div id="reportOutput"></div>
+          </section>
+
+          <section class="panel history-panel">
+            <h2>Histórico de inspeções</h2>
+            <div id="historyList" class="history-list"></div>
+          </section>
+        </main>
+      </div>
     </div>
 
     <script src="script.js"></script>
