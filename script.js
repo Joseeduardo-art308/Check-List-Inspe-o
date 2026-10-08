@@ -8,10 +8,14 @@ const reportOutput = document.getElementById('reportOutput');
 const generateReportButton = document.getElementById('generateReport');
 const clearFormButton = document.getElementById('clearForm');
 const historyList = document.getElementById('historyList');
+const connectionStatus = document.getElementById('connectionStatus');
 const STORAGE_KEY = 'fleetChecklists';
 const USERS_KEY = 'fleetUsers';
 const ACTIVE_USER_KEY = 'fleetActiveUser';
 let checklistSaved = false;
+let signatureDrawn = false;
+let signatureContext = null;
+let signaturePadInitialized = false;
 
 const itemLabels = {
   oil: 'Nível de óleo do motor',
@@ -97,6 +101,7 @@ function setActiveUser(user) {
   if (appScreen) {
     appScreen.classList.remove('hidden');
   }
+  initializeSignaturePad();
 }
 
 function clearActiveUser() {
@@ -195,6 +200,7 @@ function renderHistory() {
           <strong>${item.vehicle}</strong>
           <div class="history-meta">${item.date} • ${item.time} • ${item.location}</div>
           <div class="history-meta">Status: ${status} • Severidade: ${item.severity}</div>
+          <div class="history-meta">Horímetro / hodômetro: ${item.meterReading} • Assinatura: ${item.signature ? 'Registrada' : 'Não registrada'}</div>
         </div>
       `;
     })
@@ -207,6 +213,8 @@ function clearForm() {
   }
 
   form.reset();
+  updatePhotoRequirement();
+  clearSignature();
   checklistSaved = false;
   if (generateReportButton) {
     generateReportButton.disabled = true;
@@ -234,6 +242,113 @@ function getPhotoNames() {
   return Array.from(files).map((file) => file.name).join(', ');
 }
 
+function hasChecklistIssue() {
+  return Object.keys(itemLabels).some((key) => {
+    const selectedStatus = form.querySelector(`input[name="${key}"]:checked`);
+    return selectedStatus && selectedStatus.value === 'Não OK';
+  });
+}
+
+function updatePhotoRequirement() {
+  const photoInput = document.getElementById('photos');
+  const photoRequirement = document.getElementById('photoRequirement');
+  if (!photoInput) {
+    return;
+  }
+
+  const isRequired = hasChecklistIssue();
+  photoInput.required = isRequired;
+  photoInput.setCustomValidity(isRequired && photoInput.files.length === 0
+    ? 'Anexe ao menos uma foto para registrar itens marcados como Não OK.'
+    : '');
+
+  if (photoRequirement) {
+    photoRequirement.classList.toggle('required-hint', isRequired);
+    photoRequirement.textContent = isRequired
+      ? 'Obrigatório: anexe ao menos uma foto para registrar a irregularidade.'
+      : 'Obrigatório anexar ao menos uma foto quando algum item estiver marcado como Não OK.';
+  }
+}
+
+function initializeSignaturePad() {
+  const canvas = document.getElementById('signaturePad');
+  if (!canvas) return;
+
+  const bounds = canvas.getBoundingClientRect();
+  const pixelRatio = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.floor((bounds.width || 600) * pixelRatio));
+  canvas.height = Math.floor(180 * pixelRatio);
+  signatureContext = canvas.getContext('2d');
+  signatureContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  signatureContext.strokeStyle = '#1f2937';
+  signatureContext.lineWidth = 2.5;
+  signatureContext.lineCap = 'round';
+  signatureContext.lineJoin = 'round';
+
+  if (signaturePadInitialized) return;
+  signaturePadInitialized = true;
+  let drawing = false;
+  let lastPoint = null;
+  canvas.addEventListener('pointerdown', (event) => {
+    drawing = true;
+    canvas.setPointerCapture(event.pointerId);
+    const rect = canvas.getBoundingClientRect();
+    lastPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    signatureContext.beginPath();
+    signatureContext.moveTo(lastPoint.x, lastPoint.y);
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    if (!drawing) return;
+    const rect = canvas.getBoundingClientRect();
+    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    if (Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y) < 1) return;
+    signatureContext.lineTo(point.x, point.y);
+    signatureContext.stroke();
+    signatureDrawn = true;
+    lastPoint = point;
+    updateSignatureStatus();
+  });
+  const stopDrawing = () => { drawing = false; lastPoint = null; };
+  canvas.addEventListener('pointerup', stopDrawing);
+  canvas.addEventListener('pointercancel', stopDrawing);
+}
+
+function updateSignatureStatus() {
+  const status = document.getElementById('signatureStatus');
+  if (status) {
+    status.textContent = signatureDrawn ? 'Assinatura registrada.' : 'Nenhuma assinatura registrada.';
+  }
+}
+
+function clearSignature() {
+  const canvas = document.getElementById('signaturePad');
+  if (!canvas || !signatureContext) return;
+  signatureContext.clearRect(0, 0, canvas.width, canvas.height);
+  signatureDrawn = false;
+  updateSignatureStatus();
+}
+
+function updateConnectionStatus() {
+  if (!connectionStatus) return;
+  const offline = !navigator.onLine;
+  connectionStatus.classList.toggle('offline', offline);
+  connectionStatus.textContent = offline
+    ? 'Sem conexão. O checklist e as inspeções salvas neste dispositivo continuam disponíveis.'
+    : 'Conectado. As inspeções são salvas neste dispositivo.';
+}
+
+function registerOfflineSupport() {
+  updateConnectionStatus();
+  window.addEventListener('online', updateConnectionStatus);
+  window.addEventListener('offline', updateConnectionStatus);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js').catch((error) => {
+      console.error('Não foi possível habilitar o modo offline:', error);
+    });
+  }
+}
+
 function buildReport() {
   if (!reportOutput || !form) {
     return;
@@ -249,6 +364,7 @@ function buildReport() {
   const observations = data.observations || 'Nenhuma observação registrada.';
   const photoNames = getPhotoNames();
   const severity = data.severity || 'Baixa';
+  const meterReading = data.meterReading || 'Não informado';
 
   const issues = [];
 
@@ -264,11 +380,13 @@ function buildReport() {
   const issueCount = issues.length;
 
   const report = `Veículo: ${vehicle}
+Horímetro / hodômetro: ${meterReading}
 Data: ${date}
 Hora: ${time}
 Local da inspeção: ${location}
 Operador: ${operator}
 Responsável pela manutenção: ${responsible}
+Assinatura do motorista ou operador: Registrada
 Severidade: ${severity}
 
 Resumo geral:
@@ -337,12 +455,39 @@ if (logoutButton) {
 }
 
 if (form) {
+  form.addEventListener('change', (event) => {
+    if (event.target.matches('input[type="radio"], #photos')) {
+      updatePhotoRequirement();
+    }
+  });
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
 
     const vehicle = form.elements.vehicle.value.trim();
     if (!vehicle) {
       alert('Preencha a identificação do veículo antes de salvar.');
+      return;
+    }
+
+    if (!form.elements.meterReading.value.trim()) {
+      alert('Informe o horímetro ou hodômetro antes de salvar.');
+      form.elements.meterReading.focus();
+      return;
+    }
+
+    if (!signatureDrawn) {
+      alert('Registre a assinatura do motorista ou operador antes de salvar.');
+      document.getElementById('signaturePad').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    updatePhotoRequirement();
+    const photoInput = document.getElementById('photos');
+    if (hasChecklistIssue() && (!photoInput || photoInput.files.length === 0)) {
+      if (photoInput) {
+        photoInput.reportValidity();
+      }
       return;
     }
 
@@ -354,6 +499,8 @@ if (form) {
     const data = getFormData();
     const summary = {
       vehicle: data.vehicle || 'Não informado',
+      meterReading: data.meterReading || 'Não informado',
+      signature: document.getElementById('signaturePad').toDataURL('image/png'),
       date: data.date || 'Não informado',
       time: data.time || 'Não informado',
       location: data.location || 'Não informado',
@@ -387,8 +534,16 @@ if (clearFormButton) {
   });
 }
 
+const clearSignatureButton = document.getElementById('clearSignature');
+if (clearSignatureButton) {
+  clearSignatureButton.addEventListener('click', clearSignature);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initializeAuth();
   setCurrentDateTime();
+  updatePhotoRequirement();
+  initializeSignaturePad();
   renderHistory();
+  registerOfflineSupport();
 });

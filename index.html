@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Checklist de Inspeção da Frota</title>
+    <meta name="theme-color" content="#1f4e79" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -51,6 +54,7 @@
         </header>
 
         <main>
+          <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
           <form id="inspectionForm">
             <section class="panel">
               <h2>Dados da inspeção</h2>
@@ -58,6 +62,11 @@
                 <label>
                   <span>Placa / Identificação do veículo</span>
                   <input type="text" id="vehicle" name="vehicle" placeholder="Ex.: ABC-1234" required />
+                </label>
+
+                <label>
+                  <span>Horímetro / hodômetro</span>
+                  <input type="number" id="meterReading" name="meterReading" min="0" step="any" placeholder="Leitura atual" required />
                 </label>
 
                 <label>
@@ -264,6 +273,7 @@
               <label>
                 <span>Anexar fotos da irregularidade</span>
                 <input type="file" id="photos" name="photos" accept="image/*" multiple />
+                <small id="photoRequirement" class="field-hint">Obrigatório anexar ao menos uma foto quando algum item estiver marcado como Não OK.</small>
               </label>
 
               <label>
@@ -275,6 +285,16 @@
                   <option value="Crítica">Crítica</option>
                 </select>
               </label>
+            </section>
+
+            <section class="panel">
+              <h2>Assinatura do motorista ou operador</h2>
+              <p class="field-hint">Assine no quadro abaixo usando o dedo, caneta ou mouse. A assinatura é obrigatória.</p>
+              <canvas id="signaturePad" class="signature-pad" aria-label="Quadro para assinatura digital"></canvas>
+              <div class="signature-actions">
+                <span id="signatureStatus" class="field-hint">Nenhuma assinatura registrada.</span>
+                <button type="button" class="ghost" id="clearSignature">Limpar assinatura</button>
+              </div>
             </section>
 
             <div class="actions">
