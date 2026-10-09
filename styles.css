@@ -211,6 +211,46 @@ main {
   color: #8a4b08;
 }
 
+.sync-panel {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f7fafc;
+}
+
+.sync-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.sync-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sync-status {
+  margin-top: 10px;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.sync-status.is-success {
+  color: var(--success);
+}
+
+.sync-status.is-warning {
+  color: var(--danger);
+}
+
+.sync-status.is-info {
+  color: var(--primary-dark);
+}
+
 .panel {
   margin-bottom: 24px;
   padding: 18px;
@@ -285,6 +325,37 @@ label {
   margin-top: 10px;
 }
 
+.vehicle-registration {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.vehicle-registration summary {
+  color: var(--primary-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vehicle-registration-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.vehicle-registration-controls label {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .vehicle-registration-controls,
+  .signature-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 input, select, textarea, button {
   font: inherit;
 }
@@ -320,6 +391,22 @@ textarea {
 
 .inspection-item:last-child {
   border-bottom: none;
+}
+
+.inspection-item.incomplete {
+  border: 1px solid var(--danger);
+  background: #fff7f6;
+}
+
+.validation-summary {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  background: #fff1f0;
+  color: var(--danger);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .item-name {
@@ -457,6 +544,10 @@ button:disabled {
 
   .actions {
     flex-direction: column;
+  }
+
+  .sync-row {
+    grid-template-columns: 1fr;
   }
 
   button {
