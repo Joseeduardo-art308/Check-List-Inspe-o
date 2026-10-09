@@ -227,6 +227,7 @@ function saveInspectionToHistory(summary) {
 
   setSyncQueue(queue);
   registerVehicle(inspection.vehicle);
+  syncPendingInspections();
   return inspection;
 }
 
@@ -516,39 +517,15 @@ function updateConnectionStatus() {
   const pendingText = pendingCount > 0 ? ` ${pendingCount} inspeção(ões) pendente(s) de sincronização.` : '';
 
   connectionStatus.classList.toggle('offline', offline);
-  connectionStatus.textContent = offline
-    ? `Sem conexão. O checklist e as inspeções salvas neste dispositivo continuam disponíveis.${pendingText}`
-    : `Conectado. As inspeções são salvas neste dispositivo e a sincronização automática será tentada quando houver rede.${pendingText}`;
-}
-
-function syncStatusMessage(message, state = 'info') {
-  const syncStatus = document.getElementById('syncStatusText');
-  if (!syncStatus) return;
-
-  syncStatus.textContent = message;
-  syncStatus.classList.remove('is-success', 'is-warning', 'is-info');
-  syncStatus.classList.add(`is-${state}`);
-}
-
-function setupSyncConfiguration() {
-  const syncNowButton = document.getElementById('syncNowButton');
-
-  if (syncNowButton) {
-    syncNowButton.addEventListener('click', async () => {
-      if (!getConfiguredSyncUrl()) {
-        syncStatusMessage('Nenhum destino de sincronização está configurado neste app.', 'warning');
-        return;
-      }
-
-      syncStatusMessage('Sincronizando inspeções pendentes...', 'info');
-      const success = await syncPendingInspections();
-      syncStatusMessage(
-        success
-          ? 'Sincronização concluída com sucesso.'
-          : 'Não foi possível sincronizar no momento. As inspeções continuam salvas localmente.',
-        success ? 'success' : 'warning'
-      );
-    });
+  const syncUrl = getConfiguredSyncUrl();
+  if (offline) {
+    connectionStatus.textContent = `Sem conexão. O checklist e as inspeções salvas neste dispositivo continuam disponíveis.${pendingText}`;
+  } else if (!syncUrl) {
+    connectionStatus.textContent = pendingCount
+      ? `Conectado. ${pendingCount} inspeção(ões) salva(s) localmente; destino de sincronização automática ainda não configurado.`
+      : 'Conectado. As inspeções são salvas neste dispositivo; destino de sincronização automática ainda não configurado.';
+  } else {
+    connectionStatus.textContent = `Conectado. A sincronização automática está ativa.${pendingText}`;
   }
 }
 
@@ -790,7 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeSignaturePad();
   hydrateSyncQueueFromHistory();
   renderHistory();
-  setupSyncConfiguration();
   registerOfflineSupport();
   syncPendingInspections();
 });

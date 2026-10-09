@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fleet-checklist-v2';
+const CACHE_NAME = 'fleet-checklist-v3';
 const APP_SHELL = [
   './',
   './index.html',
