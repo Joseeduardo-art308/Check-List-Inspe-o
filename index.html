@@ -48,6 +48,7 @@
         </section>
 
         <section id="firstAccessPanel" class="hidden" role="tabpanel" aria-labelledby="firstAccessTab">
+          <p class="auth-note">Novo motorista? Preencha seus dados e selecione o perfil Motorista para criar sua conta.</p>
           <form id="firstAccessForm" class="login-form">
             <label>
               <span>Nome completo</span>
@@ -66,10 +67,10 @@
               <input type="password" id="firstAccessConfirmPassword" minlength="8" autocomplete="new-password" required />
             </label>
             <label>
-              <span>Perfil</span>
+              <span>Perfil de acesso</span>
               <select id="firstAccessRole" required>
-                <option value="Operador">Operador</option>
                 <option value="Motorista">Motorista</option>
+                <option value="Operador">Operador</option>
               </select>
             </label>
             <button type="submit">Criar conta e entrar</button>

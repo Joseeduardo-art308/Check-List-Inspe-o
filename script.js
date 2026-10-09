@@ -143,7 +143,7 @@ function loginUser(username, password) {
   const users = getUsers();
   const normalizedUsername = username.trim();
   const comparableUsername = normalizedUsername.toLocaleLowerCase('pt-BR');
-  const normalizedPassword = String(password).trim();
+  const normalizedPassword = String(password);
   const allowedRoles = ['administrador', 'operador', 'motorista'];
 
   if (!normalizedUsername) {
@@ -934,7 +934,7 @@ if (loginForm) {
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const username = usernameInput ? usernameInput.value.trim() : '';
-    const password = passwordInput ? passwordInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
 
     if (!username) {
       alert('Informe o nome do usuário para continuar.');
@@ -969,8 +969,8 @@ if (firstAccessForm) {
     event.preventDefault();
     const name = document.getElementById('firstAccessName').value.trim();
     const username = document.getElementById('firstAccessUsername').value.trim();
-    const password = document.getElementById('firstAccessPassword').value.trim();
-    const confirmPassword = document.getElementById('firstAccessConfirmPassword').value.trim();
+    const password = document.getElementById('firstAccessPassword').value;
+    const confirmPassword = document.getElementById('firstAccessConfirmPassword').value;
     const role = document.getElementById('firstAccessRole').value;
     const allowedRoles = ['Operador', 'Motorista'];
 
