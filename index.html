@@ -14,7 +14,7 @@
       <div class="auth-card">
         <div class="auth-header">
           <h1>Controle de Frota</h1>
-          <p>Acesso exclusivo para operadores e motoristas previamente cadastrados.</p>
+          <p>Acesso exclusivo para administradores, operadores e motoristas cadastrados.</p>
         </div>
 
         <form id="loginForm" class="login-form">
@@ -40,6 +40,26 @@
       </div>
     </div>
 
+    <div id="passwordChangeScreen" class="auth-screen hidden">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Troca de senha obrigatória</h1>
+          <p>Defina uma nova senha para continuar.</p>
+        </div>
+        <form id="passwordChangeForm" class="login-form">
+          <label>
+            <span>Nova senha</span>
+            <input type="password" id="newPassword" minlength="8" autocomplete="new-password" required />
+          </label>
+          <label>
+            <span>Confirme a nova senha</span>
+            <input type="password" id="confirmPassword" minlength="8" autocomplete="new-password" required />
+          </label>
+          <button type="submit">Salvar nova senha</button>
+        </form>
+      </div>
+    </div>
+
     <div id="appScreen" class="app-screen hidden">
       <div class="container">
         <header class="header">
@@ -49,12 +69,48 @@
           </div>
           <div class="user-actions">
             <span id="userBadge" class="user-badge">Usuário</span>
+            <button type="button" id="userManagementButton" class="ghost small hidden">Cadastro de usuários</button>
             <button type="button" id="logoutButton" class="ghost small">Sair</button>
           </div>
         </header>
 
         <main>
           <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
+
+          <section id="userManagementPanel" class="panel user-management hidden" aria-labelledby="userManagementTitle">
+            <div class="user-management-header">
+              <h2 id="userManagementTitle">Cadastro de usuários</h2>
+              <button type="button" id="backToChecklist" class="ghost small">Voltar ao checklist</button>
+            </div>
+            <form id="userForm" class="grid two-columns user-form">
+              <label>
+                <span>Nome</span>
+                <input type="text" id="managedUserName" required />
+              </label>
+              <label>
+                <span>Usuário</span>
+                <input type="text" id="managedUsername" required />
+              </label>
+              <label>
+                <span>Senha <small id="managedPasswordHint">(mínimo de 8 caracteres)</small></span>
+                <input type="password" id="managedUserPassword" minlength="8" autocomplete="new-password" />
+              </label>
+              <label>
+                <span>Perfil</span>
+                <select id="managedUserRole" required>
+                  <option value="Administrador">Administrador</option>
+                  <option value="Operador">Operador</option>
+                  <option value="Motorista">Motorista</option>
+                </select>
+              </label>
+              <div class="user-form-actions">
+                <button type="submit" id="saveUserButton">Cadastrar usuário</button>
+                <button type="button" id="cancelUserEdit" class="ghost hidden">Cancelar edição</button>
+              </div>
+            </form>
+            <h3>Usuários cadastrados</h3>
+            <div id="managedUsersList" class="managed-users-list"></div>
+          </section>
 
           <form id="inspectionForm">
             <section class="panel">
@@ -84,7 +140,7 @@
 
                 <label>
                   <span>Operador</span>
-                  <input type="text" id="operator" name="operator" placeholder="Nome do operador" required />
+                  <input type="text" id="operator" name="operator" placeholder="Usuário logado" readonly required />
                 </label>
 
                 <label>
@@ -323,7 +379,7 @@
             <div id="reportOutput"></div>
           </section>
 
-          <section class="panel history-panel">
+          <section id="historyPanel" class="panel history-panel">
             <h2>Histórico de inspeções</h2>
             <div id="historyList" class="history-list"></div>
           </section>

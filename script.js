@@ -1,8 +1,14 @@
 const authScreen = document.getElementById('authScreen');
+const passwordChangeScreen = document.getElementById('passwordChangeScreen');
 const appScreen = document.getElementById('appScreen');
 const loginForm = document.getElementById('loginForm');
+const passwordChangeForm = document.getElementById('passwordChangeForm');
 const logoutButton = document.getElementById('logoutButton');
 const userBadge = document.getElementById('userBadge');
+const userManagementButton = document.getElementById('userManagementButton');
+const userManagementPanel = document.getElementById('userManagementPanel');
+const userForm = document.getElementById('userForm');
+const managedUsersList = document.getElementById('managedUsersList');
 const form = document.getElementById('inspectionForm');
 const reportOutput = document.getElementById('reportOutput');
 const generateReportButton = document.getElementById('generateReport');
@@ -19,6 +25,8 @@ let checklistValidationAttempted = false;
 let signatureDrawn = false;
 let signatureContext = null;
 let signaturePadInitialized = false;
+let pendingPasswordChangeUser = null;
+let editingUserId = null;
 
 const itemLabels = {
   oil: 'Nível de óleo do motor',
@@ -41,32 +49,74 @@ const itemLabels = {
 };
 
 function ensureDefaultUsers() {
-  const currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-
-  if (currentUsers.length > 0) {
-    return;
+  let currentUsers;
+  try {
+    currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  } catch (error) {
+    currentUsers = [];
   }
 
-  const defaultUsers = [];
-  localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+  if (!Array.isArray(currentUsers) || currentUsers.length === 0) {
+    currentUsers = [{
+      id: 'default-admin',
+      name: 'Administrador',
+      username: 'admin',
+      password: 'admin123',
+      role: 'Administrador',
+      active: true,
+      mustChangePassword: true
+    }];
+  } else {
+    currentUsers = currentUsers.map((user) => ({
+      ...user,
+      id: user.id || createUserId(),
+      active: user.active !== false,
+      mustChangePassword: Boolean(user.mustChangePassword)
+    }));
+  }
+
+  localStorage.setItem(USERS_KEY, JSON.stringify(currentUsers));
+}
+
+function createUserId() {
+  return `user-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getUsers() {
+  try {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    return Array.isArray(users) ? users : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function isAdministrator(user) {
+  return String(user?.role || '').trim().toLocaleLowerCase('pt-BR') === 'administrador';
 }
 
 function loginUser(username, password) {
-  const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  const users = getUsers();
   const normalizedUsername = username.trim();
+  const comparableUsername = normalizedUsername.toLocaleLowerCase('pt-BR');
   const normalizedPassword = String(password).trim();
-  const allowedRoles = ['operador', 'motorista'];
+  const allowedRoles = ['administrador', 'operador', 'motorista'];
 
   if (!normalizedUsername) {
     return null;
   }
 
   const match = users.find((user) => {
-    const storedUsername = String(user.username || '').trim();
-    const storedName = String(user.name || '').trim();
+    const storedUsername = String(user.username || '').trim().toLocaleLowerCase('pt-BR');
+    const storedName = String(user.name || '').trim().toLocaleLowerCase('pt-BR');
     const role = String(user.role || '').trim().toLocaleLowerCase('pt-BR');
-    return (storedUsername === normalizedUsername || storedName === normalizedUsername)
+    return (storedUsername === comparableUsername || storedName === comparableUsername)
       && String(user.password) === normalizedPassword
+      && user.active !== false
       && allowedRoles.includes(role);
   });
 
@@ -74,9 +124,18 @@ function loginUser(username, password) {
 }
 
 function setActiveUser(user) {
-  localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(user));
+  const sessionUser = {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    role: user.role
+  };
+  localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(sessionUser));
   if (userBadge) {
     userBadge.textContent = `${user.name || user.username} • ${user.role}`;
+  }
+  if (userManagementButton) {
+    userManagementButton.classList.toggle('hidden', !isAdministrator(user));
   }
   const operatorInput = document.getElementById('operator');
   if (operatorInput) {
@@ -85,9 +144,13 @@ function setActiveUser(user) {
   if (authScreen) {
     authScreen.classList.add('hidden');
   }
+  if (passwordChangeScreen) {
+    passwordChangeScreen.classList.add('hidden');
+  }
   if (appScreen) {
     appScreen.classList.remove('hidden');
   }
+  closeUserManagement();
   initializeSignaturePad();
 }
 
@@ -96,12 +159,19 @@ function clearActiveUser() {
   if (authScreen) {
     authScreen.classList.remove('hidden');
   }
+  if (passwordChangeScreen) {
+    passwordChangeScreen.classList.add('hidden');
+  }
   if (appScreen) {
     appScreen.classList.add('hidden');
   }
   if (userBadge) {
     userBadge.textContent = 'Usuário';
   }
+  if (userManagementButton) {
+    userManagementButton.classList.add('hidden');
+  }
+  closeUserManagement();
 }
 
 function initializeAuth() {
@@ -109,10 +179,219 @@ function initializeAuth() {
   const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
 
   if (activeUser) {
-    setActiveUser(activeUser);
+    const currentUser = getUsers().find((user) => user.id === activeUser.id || user.username === activeUser.username);
+    if (currentUser && currentUser.active !== false && !currentUser.mustChangePassword) {
+      setActiveUser(currentUser);
+    } else {
+      clearActiveUser();
+    }
   } else {
     clearActiveUser();
   }
+}
+
+function openUserManagement() {
+  const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
+  if (!isAdministrator(activeUser)) {
+    return;
+  }
+
+  form.classList.add('hidden');
+  document.getElementById('reportPanel')?.classList.add('hidden');
+  document.getElementById('historyPanel')?.classList.add('hidden');
+  userManagementPanel.classList.remove('hidden');
+  renderManagedUsers();
+}
+
+function closeUserManagement() {
+  if (userManagementPanel) userManagementPanel.classList.add('hidden');
+  if (form) form.classList.remove('hidden');
+  document.getElementById('reportPanel')?.classList.remove('hidden');
+  document.getElementById('historyPanel')?.classList.remove('hidden');
+  resetUserForm();
+}
+
+function resetUserForm() {
+  if (!userForm) return;
+  userForm.reset();
+  editingUserId = null;
+  const passwordInput = document.getElementById('managedUserPassword');
+  const saveButton = document.getElementById('saveUserButton');
+  const passwordHint = document.getElementById('managedPasswordHint');
+  const cancelButton = document.getElementById('cancelUserEdit');
+  passwordInput.required = true;
+  passwordInput.placeholder = '';
+  passwordHint.textContent = '(mínimo de 8 caracteres)';
+  saveButton.textContent = 'Cadastrar usuário';
+  cancelButton.classList.add('hidden');
+}
+
+function renderManagedUsers() {
+  if (!managedUsersList) return;
+  managedUsersList.replaceChildren();
+
+  getUsers().forEach((user) => {
+    const card = document.createElement('article');
+    card.className = `managed-user-card${user.active === false ? ' inactive' : ''}`;
+
+    const details = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = user.name || user.username;
+    const meta = document.createElement('div');
+    meta.className = 'history-meta';
+    meta.textContent = `Usuário: ${user.username} • Perfil: ${user.role} • ${user.active === false ? 'Inativo' : 'Ativo'}`;
+    details.append(name, meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'managed-user-actions';
+    actions.append(
+      createUserActionButton('Editar', 'secondary', () => editManagedUser(user.id)),
+      createUserActionButton(user.active === false ? 'Ativar' : 'Inativar', 'ghost', () => toggleManagedUser(user.id)),
+      createUserActionButton('Redefinir senha', 'ghost', () => resetManagedUserPassword(user.id))
+    );
+    card.append(details, actions);
+    managedUsersList.append(card);
+  });
+}
+
+function createUserActionButton(label, style, action) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = style;
+  button.textContent = label;
+  button.addEventListener('click', action);
+  return button;
+}
+
+function editManagedUser(userId) {
+  const user = getUsers().find((item) => item.id === userId);
+  if (!user) return;
+
+  editingUserId = userId;
+  document.getElementById('managedUserName').value = user.name || '';
+  document.getElementById('managedUsername').value = user.username || '';
+  document.getElementById('managedUserPassword').value = '';
+  document.getElementById('managedUserPassword').required = false;
+  document.getElementById('managedUserPassword').placeholder = 'Deixe em branco para manter';
+  document.getElementById('managedPasswordHint').textContent = '(opcional ao editar)';
+  document.getElementById('managedUserRole').value = user.role;
+  document.getElementById('saveUserButton').textContent = 'Salvar alterações';
+  document.getElementById('cancelUserEdit').classList.remove('hidden');
+  document.getElementById('managedUserName').focus();
+}
+
+function toggleManagedUser(userId) {
+  const users = getUsers();
+  const user = users.find((item) => item.id === userId);
+  const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
+  if (!user) return;
+
+  if (user.id === activeUser?.id) {
+    alert('Não é possível inativar o usuário administrador da sessão atual.');
+    return;
+  }
+
+  if (user.active !== false && isAdministrator(user)) {
+    const otherActiveAdmins = users.filter((item) => item.id !== userId && item.active !== false && isAdministrator(item));
+    if (!otherActiveAdmins.length) {
+      alert('Mantenha pelo menos um administrador ativo.');
+      return;
+    }
+  }
+
+  user.active = user.active === false;
+  saveUsers(users);
+  renderManagedUsers();
+}
+
+function resetManagedUserPassword(userId) {
+  const users = getUsers();
+  const user = users.find((item) => item.id === userId);
+  if (!user) return;
+
+  const newPassword = prompt(`Digite a nova senha para ${user.username} (mínimo de 8 caracteres):`);
+  if (newPassword === null) return;
+  if (newPassword.length < 8) {
+    alert('A senha precisa ter pelo menos 8 caracteres.');
+    return;
+  }
+
+  user.password = newPassword;
+  user.mustChangePassword = true;
+  saveUsers(users);
+  renderManagedUsers();
+
+  const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
+  if (activeUser?.id === user.id) {
+    clearActiveUser();
+  }
+}
+
+function saveManagedUser(event) {
+  event.preventDefault();
+  const name = document.getElementById('managedUserName').value.trim();
+  const username = document.getElementById('managedUsername').value.trim();
+  const password = document.getElementById('managedUserPassword').value;
+  const role = document.getElementById('managedUserRole').value;
+  const users = getUsers();
+  const existing = editingUserId ? users.find((user) => user.id === editingUserId) : null;
+  const normalizedUsername = username.toLocaleLowerCase('pt-BR');
+
+  if (users.some((user) => user.id !== editingUserId && String(user.username).trim().toLocaleLowerCase('pt-BR') === normalizedUsername)) {
+    alert('Já existe um usuário com esse nome de usuário.');
+    document.getElementById('managedUsername').focus();
+    return;
+  }
+
+  if (password && password.length < 8) {
+    alert('A senha precisa ter pelo menos 8 caracteres.');
+    document.getElementById('managedUserPassword').focus();
+    return;
+  }
+
+  const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
+  if (existing) {
+    if (existing.id === activeUser?.id && !isAdministrator({ role })) {
+      alert('O administrador da sessão não pode remover o próprio perfil de administrador.');
+      return;
+    }
+
+    if (isAdministrator(existing) && !isAdministrator({ role })) {
+      const otherActiveAdmins = users.filter((user) => user.id !== existing.id && user.active !== false && isAdministrator(user));
+      if (existing.active !== false && !otherActiveAdmins.length) {
+        alert('Mantenha pelo menos um administrador ativo.');
+        return;
+      }
+    }
+
+    existing.name = name;
+    existing.username = username;
+    existing.role = role;
+    if (password) {
+      existing.password = password;
+      existing.mustChangePassword = true;
+    }
+  } else {
+    if (!password) {
+      alert('Informe uma senha para o novo usuário.');
+      return;
+    }
+    users.push({
+      id: createUserId(),
+      name,
+      username,
+      password,
+      role,
+      active: true,
+      mustChangePassword: false
+    });
+  }
+
+  saveUsers(users);
+  const updatedCurrentUser = users.find((user) => user.id === activeUser?.id);
+  if (updatedCurrentUser) setActiveUser(updatedCurrentUser);
+  resetUserForm();
+  renderManagedUsers();
 }
 
 function getLocalDateTime() {
@@ -624,12 +903,73 @@ if (loginForm) {
 
     const user = loginUser(username, password);
     if (!user) {
-      alert('Acesso não autorizado. Confira os dados e use uma conta cadastrada com perfil de operador ou motorista.');
+      alert('Acesso não autorizado. Confira os dados e use uma conta ativa de administrador, operador ou motorista.');
+      return;
+    }
+
+    if (user.mustChangePassword) {
+      pendingPasswordChangeUser = user;
+      authScreen.classList.add('hidden');
+      passwordChangeScreen.classList.remove('hidden');
+      document.getElementById('newPassword').focus();
       return;
     }
 
     setActiveUser(user);
   });
+}
+
+if (passwordChangeForm) {
+  passwordChangeForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!pendingPasswordChangeUser) return;
+
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    if (newPassword.length < 8) {
+      alert('A nova senha precisa ter pelo menos 8 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('As senhas não conferem.');
+      document.getElementById('confirmPassword').focus();
+      return;
+    }
+
+    const users = getUsers();
+    const user = users.find((item) => item.id === pendingPasswordChangeUser.id);
+    if (!user || user.active === false) {
+      pendingPasswordChangeUser = null;
+      clearActiveUser();
+      alert('Essa conta não está mais ativa. Fale com um administrador.');
+      return;
+    }
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    saveUsers(users);
+    pendingPasswordChangeUser = null;
+    passwordChangeForm.reset();
+    setActiveUser(user);
+  });
+}
+
+if (userManagementButton) {
+  userManagementButton.addEventListener('click', openUserManagement);
+}
+
+const backToChecklistButton = document.getElementById('backToChecklist');
+if (backToChecklistButton) {
+  backToChecklistButton.addEventListener('click', closeUserManagement);
+}
+
+const cancelUserEditButton = document.getElementById('cancelUserEdit');
+if (cancelUserEditButton) {
+  cancelUserEditButton.addEventListener('click', resetUserForm);
+}
+
+if (userForm) {
+  userForm.addEventListener('submit', saveManagedUser);
 }
 
 if (logoutButton) {
