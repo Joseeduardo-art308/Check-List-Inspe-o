@@ -99,6 +99,26 @@ function isAdministrator(user) {
   return String(user?.role || '').trim().toLocaleLowerCase('pt-BR') === 'administrador';
 }
 
+function updateActiveUserDisplay(user) {
+  const sessionUser = {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    role: user.role
+  };
+  localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(sessionUser));
+  if (userBadge) {
+    userBadge.textContent = `${user.name || user.username} • ${user.role}`;
+  }
+  if (userManagementButton) {
+    userManagementButton.classList.toggle('hidden', !isAdministrator(user));
+  }
+  const operatorInput = document.getElementById('operator');
+  if (operatorInput) {
+    operatorInput.value = user.name || user.username || '';
+  }
+}
+
 function loginUser(username, password) {
   const users = getUsers();
   const normalizedUsername = username.trim();
@@ -124,23 +144,7 @@ function loginUser(username, password) {
 }
 
 function setActiveUser(user) {
-  const sessionUser = {
-    id: user.id,
-    name: user.name,
-    username: user.username,
-    role: user.role
-  };
-  localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(sessionUser));
-  if (userBadge) {
-    userBadge.textContent = `${user.name || user.username} • ${user.role}`;
-  }
-  if (userManagementButton) {
-    userManagementButton.classList.toggle('hidden', !isAdministrator(user));
-  }
-  const operatorInput = document.getElementById('operator');
-  if (operatorInput) {
-    operatorInput.value = user.name || user.username || '';
-  }
+  updateActiveUserDisplay(user);
   if (authScreen) {
     authScreen.classList.add('hidden');
   }
@@ -389,7 +393,13 @@ function saveManagedUser(event) {
 
   saveUsers(users);
   const updatedCurrentUser = users.find((user) => user.id === activeUser?.id);
-  if (updatedCurrentUser) setActiveUser(updatedCurrentUser);
+  if (updatedCurrentUser && existing?.id === activeUser?.id && password) {
+    resetUserForm();
+    clearActiveUser();
+    alert('Sua senha foi redefinida. Entre novamente para continuar.');
+    return;
+  }
+  if (updatedCurrentUser) updateActiveUserDisplay(updatedCurrentUser);
   resetUserForm();
   renderManagedUsers();
 }
@@ -928,6 +938,11 @@ if (passwordChangeForm) {
     const confirmPassword = document.getElementById('confirmPassword').value;
     if (newPassword.length < 8) {
       alert('A nova senha precisa ter pelo menos 8 caracteres.');
+      return;
+    }
+    if (newPassword === pendingPasswordChangeUser.password) {
+      alert('Escolha uma senha diferente da senha provisória.');
+      document.getElementById('newPassword').focus();
       return;
     }
     if (newPassword !== confirmPassword) {
