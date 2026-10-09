@@ -17,26 +17,65 @@
           <p>Acesso exclusivo para administradores, operadores e motoristas cadastrados.</p>
         </div>
 
-        <form id="loginForm" class="login-form">
-          <label>
-            <span>Usuário</span>
-            <input type="text" id="username" name="username" placeholder="Digite seu nome" required />
-          </label>
-
-          <label>
-            <span>Senha</span>
-            <input type="password" id="password" name="password" placeholder="Digite sua senha" required />
-          </label>
-
-          <button type="submit">Entrar</button>
-        </form>
-
-        <div class="demo-box">
-          <strong>ACESSO</strong>
-          <ul>
-            <li>Informe seu nome de usuário e sua senha para acessar o sistema.</li>
-          </ul>
+        <div class="auth-tabs" role="tablist" aria-label="Acesso ao sistema">
+          <button type="button" id="loginTab" class="auth-tab active" role="tab" aria-selected="true" aria-controls="loginPanel">Entrar</button>
+          <button type="button" id="firstAccessTab" class="auth-tab" role="tab" aria-selected="false" aria-controls="firstAccessPanel">Primeiro acesso</button>
         </div>
+
+        <section id="loginPanel" role="tabpanel" aria-labelledby="loginTab">
+          <form id="loginForm" class="login-form">
+            <label>
+              <span>Usuário</span>
+              <input type="text" id="username" name="username" placeholder="Digite seu nome" autocomplete="username" required />
+            </label>
+
+            <label>
+              <span>Senha</span>
+              <input type="password" id="password" name="password" placeholder="Digite sua senha" autocomplete="current-password" required />
+            </label>
+
+            <button type="submit">Entrar</button>
+          </form>
+
+          <div class="demo-box">
+            <strong>USUÁRIO DE TESTE</strong>
+            <ul>
+              <li>Usuário: <strong>teste</strong></li>
+              <li>Senha provisória: <strong>Teste123!</strong></li>
+              <li>No primeiro acesso, será necessário definir uma nova senha.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="firstAccessPanel" class="hidden" role="tabpanel" aria-labelledby="firstAccessTab">
+          <form id="firstAccessForm" class="login-form">
+            <label>
+              <span>Nome completo</span>
+              <input type="text" id="firstAccessName" autocomplete="name" required />
+            </label>
+            <label>
+              <span>Nome de usuário</span>
+              <input type="text" id="firstAccessUsername" autocomplete="username" required />
+            </label>
+            <label>
+              <span>Senha (mínimo de 8 caracteres)</span>
+              <input type="password" id="firstAccessPassword" minlength="8" autocomplete="new-password" required />
+            </label>
+            <label>
+              <span>Confirme a senha</span>
+              <input type="password" id="firstAccessConfirmPassword" minlength="8" autocomplete="new-password" required />
+            </label>
+            <label>
+              <span>Perfil</span>
+              <select id="firstAccessRole" required>
+                <option value="Operador">Operador</option>
+                <option value="Motorista">Motorista</option>
+              </select>
+            </label>
+            <button type="submit">Criar conta e entrar</button>
+          </form>
+          <p class="auth-note">A conta será salva somente neste navegador.</p>
+        </section>
       </div>
     </div>
 

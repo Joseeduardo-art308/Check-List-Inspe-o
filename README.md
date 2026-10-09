@@ -29,7 +29,7 @@ O sistema deve permitir:
 | RF11 | O sistema deve permitir que o supervisor acompanhe os checklists realizados e as irregularidades identificadas. | Alta | O supervisor deve visualizar os registros e os itens marcados como “Não OK”. |
 | RF12 | O sistema deve permitir gerar relatórios de checklists e manutenções realizadas na frota. | Média | Usuários autorizados devem conseguir gerar relatórios por período, veículo, responsável ou status. |
 | RF13 | O sistema deve permitir cadastrar, editar e inativar veículos da frota. | Alta | Usuários autorizados devem manter o cadastro dos veículos atualizado e consistente. |
-| RF14 | O sistema deve permitir cadastrar usuários e definir perfis de acesso. | Alta | O administrador deve criar usuários e atribuir permissões conforme o perfil do cargo. |
+| RF14 | O sistema deve permitir cadastrar usuários e definir perfis de acesso. | Alta | O administrador deve criar usuários e atribuir permissões conforme o perfil do cargo; operadores e motoristas podem criar a própria conta no primeiro acesso. |
 | RF15 | O sistema deve alertar o responsável quando uma inspeção identificar irregularidade que exija manutenção. | Alta | Ao registrar uma condição “Não OK”, o sistema deve gerar notificação ou pendência para o responsável designado. |
 
 ## 4. Regras de Negócio
@@ -38,6 +38,7 @@ O sistema deve permitir:
 - O status da manutenção deve ser rastreado por histórico de alterações.
 - O supervisor deve ter acesso ao acompanhamento das inspeções e das pendências.
 - Somente usuários autorizados podem cadastrar, editar ou inativar veículos e usuários.
+- No primeiro acesso, operadores e motoristas podem criar uma conta local; o cadastro não cria perfis administrativos.
 
 ## 5. Critérios de Aceitação Gerais
 - O sistema deve registrar todas as inspeções com data, hora e responsável.

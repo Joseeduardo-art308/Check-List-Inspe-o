@@ -2,6 +2,11 @@ const authScreen = document.getElementById('authScreen');
 const passwordChangeScreen = document.getElementById('passwordChangeScreen');
 const appScreen = document.getElementById('appScreen');
 const loginForm = document.getElementById('loginForm');
+const firstAccessForm = document.getElementById('firstAccessForm');
+const loginTab = document.getElementById('loginTab');
+const firstAccessTab = document.getElementById('firstAccessTab');
+const loginPanel = document.getElementById('loginPanel');
+const firstAccessPanel = document.getElementById('firstAccessPanel');
 const passwordChangeForm = document.getElementById('passwordChangeForm');
 const logoutButton = document.getElementById('logoutButton');
 const userBadge = document.getElementById('userBadge');
@@ -75,6 +80,21 @@ function ensureDefaultUsers() {
     }));
   }
 
+  const testUserExists = currentUsers.some((user) =>
+    String(user.username || '').trim().toLocaleLowerCase('pt-BR') === 'teste'
+  );
+  if (!testUserExists) {
+    currentUsers.push({
+      id: 'default-test-user',
+      name: 'Usuário de teste',
+      username: 'teste',
+      password: 'Teste123!',
+      role: 'Operador',
+      active: true,
+      mustChangePassword: true
+    });
+  }
+
   localStorage.setItem(USERS_KEY, JSON.stringify(currentUsers));
 }
 
@@ -141,6 +161,16 @@ function loginUser(username, password) {
   });
 
   return match || null;
+}
+
+function showAuthPanel(panelName) {
+  const showFirstAccess = panelName === 'firstAccess';
+  loginPanel.classList.toggle('hidden', showFirstAccess);
+  firstAccessPanel.classList.toggle('hidden', !showFirstAccess);
+  loginTab.classList.toggle('active', !showFirstAccess);
+  firstAccessTab.classList.toggle('active', showFirstAccess);
+  loginTab.setAttribute('aria-selected', String(!showFirstAccess));
+  firstAccessTab.setAttribute('aria-selected', String(showFirstAccess));
 }
 
 function setActiveUser(user) {
@@ -925,6 +955,63 @@ if (loginForm) {
       return;
     }
 
+    setActiveUser(user);
+  });
+}
+
+if (loginTab && firstAccessTab) {
+  loginTab.addEventListener('click', () => showAuthPanel('login'));
+  firstAccessTab.addEventListener('click', () => showAuthPanel('firstAccess'));
+}
+
+if (firstAccessForm) {
+  firstAccessForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const name = document.getElementById('firstAccessName').value.trim();
+    const username = document.getElementById('firstAccessUsername').value.trim();
+    const password = document.getElementById('firstAccessPassword').value.trim();
+    const confirmPassword = document.getElementById('firstAccessConfirmPassword').value.trim();
+    const role = document.getElementById('firstAccessRole').value;
+    const allowedRoles = ['Operador', 'Motorista'];
+
+    if (!allowedRoles.includes(role)) {
+      alert('Selecione um perfil válido para continuar.');
+      return;
+    }
+    if (password.length < 8) {
+      alert('A senha precisa ter pelo menos 8 caracteres.');
+      document.getElementById('firstAccessPassword').focus();
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert('As senhas não conferem.');
+      document.getElementById('firstAccessConfirmPassword').focus();
+      return;
+    }
+
+    const users = getUsers();
+    const normalizedUsername = username.toLocaleLowerCase('pt-BR');
+    const usernameExists = users.some((user) =>
+      String(user.username || '').trim().toLocaleLowerCase('pt-BR') === normalizedUsername
+    );
+    if (usernameExists) {
+      alert('Já existe uma conta com esse nome de usuário. Escolha outro.');
+      document.getElementById('firstAccessUsername').focus();
+      return;
+    }
+
+    const user = {
+      id: createUserId(),
+      name,
+      username,
+      password,
+      role,
+      active: true,
+      mustChangePassword: false
+    };
+    users.push(user);
+    saveUsers(users);
+    firstAccessForm.reset();
     setActiveUser(user);
   });
 }
