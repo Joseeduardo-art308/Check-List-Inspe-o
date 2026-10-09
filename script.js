@@ -675,7 +675,6 @@ if (loginForm) {
     }
 
     setActiveUser(user);
-    alert(`Login realizado com sucesso. Bem-vindo, ${user.name}!`);
   });
 }
 
