@@ -14,7 +14,6 @@ const VEHICLES_KEY = 'fleetVehicles';
 const USERS_KEY = 'fleetUsers';
 const ACTIVE_USER_KEY = 'fleetActiveUser';
 const SYNC_QUEUE_KEY = 'fleetChecklistSyncQueue';
-const SYNC_URL_KEY = 'fleetChecklistSyncUrl';
 let checklistSaved = false;
 let checklistValidationAttempted = false;
 let signatureDrawn = false;
@@ -200,18 +199,8 @@ function hydrateSyncQueueFromHistory() {
 }
 
 function getConfiguredSyncUrl() {
-  const configured = localStorage.getItem(SYNC_URL_KEY) || (window.FLEET_SYNC_URL || '');
+  const configured = window.FLEET_SYNC_URL || '';
   return typeof configured === 'string' ? configured.trim() : '';
-}
-
-function setConfiguredSyncUrl(url) {
-  const normalized = typeof url === 'string' ? url.trim() : '';
-  if (normalized) {
-    localStorage.setItem(SYNC_URL_KEY, normalized);
-    return;
-  }
-
-  localStorage.removeItem(SYNC_URL_KEY);
 }
 
 function saveInspectionToHistory(summary) {
@@ -542,24 +531,12 @@ function syncStatusMessage(message, state = 'info') {
 }
 
 function setupSyncConfiguration() {
-  const syncUrlInput = document.getElementById('syncUrlInput');
   const syncNowButton = document.getElementById('syncNowButton');
-
-  if (syncUrlInput) {
-    syncUrlInput.value = getConfiguredSyncUrl();
-    syncUrlInput.addEventListener('change', (event) => {
-      setConfiguredSyncUrl(event.target.value);
-      syncStatusMessage('Endpoint de sincronização atualizado.', 'success');
-      if (navigator.onLine && getConfiguredSyncUrl()) {
-        syncPendingInspections();
-      }
-    });
-  }
 
   if (syncNowButton) {
     syncNowButton.addEventListener('click', async () => {
       if (!getConfiguredSyncUrl()) {
-        syncStatusMessage('Defina um endpoint para sincronizar as inspeções pendentes.', 'warning');
+        syncStatusMessage('Nenhum destino de sincronização está configurado neste app.', 'warning');
         return;
       }
 
