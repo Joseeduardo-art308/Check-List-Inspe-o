@@ -684,7 +684,6 @@ if (logoutButton) {
     if (form) {
       clearForm();
     }
-    alert('Logout realizado com sucesso.');
   });
 }
 
