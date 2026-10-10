@@ -270,8 +270,10 @@ drop policy if exists inspections_insert_self on public.inspecoes;
 create policy inspections_insert_self on public.inspecoes for insert to authenticated
 with check (inspecionado_por=(select auth.uid()) and (select public.perfil_atual_usuario()) is not null);
 drop policy if exists inspections_update_managers on public.inspecoes;
-create policy inspections_update_managers on public.inspecoes for update to authenticated
-using ((select public.usuario_eh_admin_ou_supervisor())) with check ((select public.usuario_eh_admin_ou_supervisor()));
+drop policy if exists inspections_update_own_or_managers on public.inspecoes;
+create policy inspections_update_own_or_managers on public.inspecoes for update to authenticated
+using (inspecionado_por=(select auth.uid()) or (select public.usuario_eh_admin_ou_supervisor()))
+with check (inspecionado_por=(select auth.uid()) or (select public.usuario_eh_admin_ou_supervisor()));
 drop policy if exists inspections_delete_admin on public.inspecoes;
 create policy inspections_delete_admin on public.inspecoes for delete to authenticated
 using ((select public.perfil_atual_usuario())='administrador');
