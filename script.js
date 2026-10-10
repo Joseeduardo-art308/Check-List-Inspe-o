@@ -25,6 +25,11 @@ const VEHICLES_KEY = 'fleetVehicles';
 const USERS_KEY = 'fleetUsers';
 const ACTIVE_USER_KEY = 'fleetActiveUser';
 const SYNC_QUEUE_KEY = 'fleetChecklistSyncQueue';
+const supabaseClient = window.supabase?.createClient && window.SUPABASE_URL && window.SUPABASE_ANON_KEY
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+let currentProfile = null;
+let vehiclesById = new Map();
 let checklistSaved = false;
 let checklistValidationAttempted = false;
 let signatureDrawn = false;
@@ -54,6 +59,7 @@ const itemLabels = {
 };
 
 function ensureDefaultUsers() {
+  return;
   let currentUsers;
   try {
     currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
@@ -131,7 +137,7 @@ function updateActiveUserDisplay(user) {
     userBadge.textContent = `${user.name || user.username} • ${user.role}`;
   }
   if (userManagementButton) {
-    userManagementButton.classList.toggle('hidden', !isAdministrator(user));
+    userManagementButton.classList.add('hidden'); // criação de usuários exige fluxo administrativo no servidor
   }
   const operatorInput = document.getElementById('operator');
   if (operatorInput) {
@@ -208,7 +214,21 @@ function clearActiveUser() {
   closeUserManagement();
 }
 
-function initializeAuth() {
+async function initializeAuth() {
+  if (supabaseClient) {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      await loadCurrentProfile();
+      return;
+    }
+    clearActiveUser();
+    return;
+  }
+  if (!supabaseClient) {
+    connectionStatus.textContent = 'Configure SUPABASE_URL e SUPABASE_ANON_KEY em supabase-config.js para conectar.';
+    clearActiveUser();
+    return;
+  }
   ensureDefaultUsers();
   const activeUser = JSON.parse(localStorage.getItem(ACTIVE_USER_KEY) || 'null');
 
@@ -222,6 +242,23 @@ function initializeAuth() {
   } else {
     clearActiveUser();
   }
+}
+
+async function loadCurrentProfile() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return clearActiveUser();
+  const { data, error } = await supabaseClient.from('perfis')
+    .select('id,nome_usuario,nome_exibicao,perfil_acesso,ativo').eq('id', user.id).single();
+  if (error || !data || !data.ativo) {
+    await supabaseClient.auth.signOut();
+    clearActiveUser();
+    throw error || new Error('Perfil inativo ou não encontrado.');
+  }
+  currentProfile = data;
+  setActiveUser({ id: data.id, name: data.nome_exibicao, username: data.nome_usuario,
+    role: data.perfil_acesso, active: true });
+  await loadVehicles();
+  await loadInspectionHistory();
 }
 
 function openUserManagement() {
@@ -551,6 +588,7 @@ function saveInspectionToHistory(summary) {
 }
 
 function getStoredVehicles() {
+  if (supabaseClient) return [...vehiclesById.values()].map((vehicle) => vehicle.identificacao);
   try {
     const vehicles = JSON.parse(localStorage.getItem(VEHICLES_KEY) || '[]');
     const historicalVehicles = getStoredHistory().map((inspection) => inspection.vehicle).filter(Boolean);
@@ -578,9 +616,27 @@ function renderVehicleOptions(selectedVehicle = '') {
   }
 }
 
-function registerVehicle(vehicle, selectAfterAdding = true) {
+async function loadVehicles() {
+  const { data, error } = await supabaseClient.from('veiculos').select('id,identificacao').eq('ativo', true).order('identificacao');
+  if (error) throw error;
+  vehiclesById = new Map((data || []).map((vehicle) => [vehicle.identificacao, vehicle]));
+  renderVehicleOptions(document.getElementById('vehicle')?.value || '');
+}
+
+async function registerVehicle(vehicle, selectAfterAdding = true) {
   const normalizedVehicle = String(vehicle || '').trim();
   if (!normalizedVehicle) return false;
+
+  if (supabaseClient) {
+    const found = [...vehiclesById.values()].find((item) => item.identificacao.toLocaleLowerCase('pt-BR') === normalizedVehicle.toLocaleLowerCase('pt-BR'));
+    if (!found) {
+      const { data, error } = await supabaseClient.from('veiculos').insert({ identificacao: normalizedVehicle, criado_por: currentProfile.id }).select('id,identificacao').single();
+      if (error) throw error;
+      vehiclesById.set(data.identificacao, data);
+    }
+    renderVehicleOptions(selectAfterAdding ? (found?.identificacao || normalizedVehicle) : '');
+    return !found;
+  }
 
   const vehicles = getStoredVehicles();
   const existingVehicle = vehicles.find((item) => item.toLocaleLowerCase('pt-BR') === normalizedVehicle.toLocaleLowerCase('pt-BR'));
@@ -623,6 +679,7 @@ function renderHistory() {
 }
 
 async function syncPendingInspections() {
+  if (supabaseClient) { updateConnectionStatus(); return true; }
   const syncUrl = getConfiguredSyncUrl();
   const queue = getSyncQueue().filter((item) => item.syncStatus !== 'synced');
 
@@ -670,6 +727,65 @@ async function syncPendingInspections() {
   renderHistory();
   updateConnectionStatus();
   return true;
+}
+
+async function loadInspectionHistory() {
+  const { data, error } = await supabaseClient.from('inspecoes')
+    .select('id,inspecionado_em,leitura_medidor,local_inspecao,severidade,nome_operador_registrado,veiculos(identificacao),resultados_checklist(situacao)')
+    .order('inspecionado_em', { ascending: false }).limit(30);
+  if (error) throw error;
+  const history = (data || []).map((row) => ({ id: row.id, vehicle: row.veiculos?.identificacao || '—',
+    date: new Date(row.inspecionado_em).toLocaleDateString('pt-BR'), time: new Date(row.inspecionado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    meterReading: row.leitura_medidor, location: row.local_inspecao, severity: row.severidade,
+    hasIssue: row.resultados_checklist.some((item) => item.situacao === 'nao_ok'), syncStatus: 'synced' }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+async function persistInspection(data) {
+  const vehicle = vehiclesById.get(data.vehicle);
+  if (!vehicle) throw new Error('Veículo não encontrado no Supabase.');
+  const { data: inspection, error } = await supabaseClient.from('inspecoes').insert({
+    veiculo_id: vehicle.id, inspecionado_por: currentProfile.id, nome_operador_registrado: currentProfile.nome_exibicao,
+    nome_responsavel_manutencao: data.maintenanceResponsible || null,
+    inspecionado_em: new Date(`${data.date}T${data.time || '00:00'}:00`).toISOString(), leitura_medidor: Number(data.meterReading),
+    tipo_medidor: 'hodometro', local_inspecao: data.location, observacoes: data.observations || null,
+    severidade: ({ 'Baixa':'baixa','Média':'media','Alta':'alta','Crítica':'critica' })[data.severity] || 'baixa',
+    caminho_assinatura: null
+  }).select('id').single();
+  if (error) throw error;
+  const { data: definitions, error: definitionsError } = await supabaseClient.from('definicoes_checklist').select('id,chave_item,rotulo');
+  if (definitionsError) throw definitionsError;
+  const results = definitions.map((definition) => ({
+    inspecao_id: inspection.id, definicao_checklist_id: definition.id, rotulo_item_registrado: definition.rotulo,
+    situacao: ({ 'OK':'ok','Não OK':'nao_ok','N/A':'na' })[data[definition.chave_item]] || 'na', observacoes_item: null
+  }));
+  const { error: resultsError } = await supabaseClient.from('resultados_checklist').insert(results);
+  if (resultsError) throw resultsError;
+
+  const signatureBlob = await (await fetch(document.getElementById('signaturePad').toDataURL('image/png'))).blob();
+  const signaturePath = `${currentProfile.id}/${inspection.id}/assinatura.png`;
+  const { error: signatureError } = await supabaseClient.storage.from('inspection-evidence').upload(signaturePath, signatureBlob, { contentType: 'image/png', upsert: true });
+  if (signatureError) throw signatureError;
+  const { error: signatureUpdateError } = await supabaseClient.from('inspecoes').update({ caminho_assinatura: signaturePath }).eq('id', inspection.id);
+  if (signatureUpdateError) throw signatureUpdateError;
+  const files = Array.from(document.getElementById('photos')?.files || []);
+  for (const file of files) {
+    const path = `${currentProfile.id}/${inspection.id}/${crypto.randomUUID()}-${file.name}`;
+    const { error: uploadError } = await supabaseClient.storage.from('inspection-evidence').upload(path, file);
+    if (uploadError) throw uploadError;
+    const { error: photoError } = await supabaseClient.from('fotos_inspecao').insert({ inspecao_id: inspection.id,
+      caminho_arquivo: path, nome_arquivo_original: file.name, tipo_conteudo: file.type || 'application/octet-stream', tamanho_bytes: file.size, enviado_por: currentProfile.id });
+    if (photoError) throw photoError;
+  }
+  if (results.some((result) => result.situacao === 'nao_ok')) {
+    const issueList = definitions.filter((definition) => data[definition.chave_item] === 'Não OK').map((item) => item.rotulo).join('; ');
+    const { error: maintenanceError } = await supabaseClient.from('solicitacoes_manutencao').insert({ inspecao_id: inspection.id,
+      veiculo_id: vehicle.id, aberto_por: currentProfile.id, descricao: issueList || data.observations || 'Não conformidade no checklist',
+      severidade: ({ 'Baixa':'baixa','Média':'media','Alta':'alta','Crítica':'critica' })[data.severity] || 'baixa' });
+    if (maintenanceError) throw maintenanceError;
+  }
+  await loadInspectionHistory();
 }
 
 function clearForm() {
@@ -929,7 +1045,7 @@ ${photoNames}
 }
 
 if (loginForm) {
-  loginForm.addEventListener('submit', (event) => {
+  loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -941,6 +1057,17 @@ if (loginForm) {
       return;
     }
 
+    if (supabaseClient) {
+      try {
+        const loginEmail = username.includes('@') ? username.trim() : `${username.trim().toLowerCase()}@fleet.local`;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail, password });
+        if (error) throw error;
+        await loadCurrentProfile();
+      } catch (error) { alert(`Não foi possível entrar: ${error.message}`); }
+      return;
+    }
+    alert('Configure a conexão com o Supabase antes de entrar.');
+    return;
     const user = loginUser(username, password);
     if (!user) {
       alert('Acesso não autorizado. Confira os dados e use uma conta ativa de administrador, operador ou motorista.');
@@ -965,7 +1092,7 @@ if (loginTab && firstAccessTab) {
 }
 
 if (firstAccessForm) {
-  firstAccessForm.addEventListener('submit', (event) => {
+  firstAccessForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const name = document.getElementById('firstAccessName').value.trim();
     const username = document.getElementById('firstAccessUsername').value.trim();
@@ -989,6 +1116,18 @@ if (firstAccessForm) {
       return;
     }
 
+    if (supabaseClient) {
+      try {
+        const { error } = await supabaseClient.auth.signUp({ email: `${username.trim().toLowerCase()}@fleet.local`, password,
+          options: { data: { username, display_name: name, role: role.toLowerCase() } } });
+        if (error) throw error;
+        alert('Conta criada. Confirme o cadastro pelo e-mail configurado no Supabase antes de entrar.');
+        firstAccessForm.reset();
+      } catch (error) { alert(`Não foi possível criar a conta: ${error.message}`); }
+      return;
+    }
+    alert('Configure a conexão com o Supabase antes de criar uma conta.');
+    return;
     const users = getUsers();
     const normalizedUsername = username.toLocaleLowerCase('pt-BR');
     const usernameExists = users.some((user) =>
@@ -1075,7 +1214,8 @@ if (userForm) {
 }
 
 if (logoutButton) {
-  logoutButton.addEventListener('click', () => {
+  logoutButton.addEventListener('click', async () => {
+    if (supabaseClient) await supabaseClient.auth.signOut();
     clearActiveUser();
     if (form) {
       clearForm();
@@ -1093,7 +1233,7 @@ if (form) {
     }
   });
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
     checklistValidationAttempted = true;
 
@@ -1151,7 +1291,15 @@ if (form) {
       hasIssue: Object.keys(itemLabels).some((key) => (data[key] || 'OK') === 'Não OK')
     };
 
-    saveInspectionToHistory(summary);
+    try {
+      if (supabaseClient) await persistInspection(data);
+      else saveInspectionToHistory(summary);
+    } catch (error) {
+      checklistSaved = false;
+      if (generateReportButton) generateReportButton.disabled = true;
+      alert(`Falha ao salvar no Supabase: ${error.message}`);
+      return;
+    }
     renderHistory();
     buildReport();
     alert('Inspeção salva com sucesso!');
@@ -1184,7 +1332,7 @@ if (clearSignatureButton) {
 
 const addVehicleButton = document.getElementById('addVehicle');
 if (addVehicleButton) {
-  addVehicleButton.addEventListener('click', () => {
+  addVehicleButton.addEventListener('click', async () => {
     const newVehicleInput = document.getElementById('newVehicle');
     const newVehicle = newVehicleInput.value.trim();
     if (!newVehicle) {
@@ -1193,22 +1341,24 @@ if (addVehicleButton) {
       return;
     }
 
-    const wasAdded = registerVehicle(newVehicle);
-    newVehicleInput.value = '';
-    alert(wasAdded ? 'Veículo cadastrado e selecionado.' : 'Esse veículo já estava cadastrado e foi selecionado.');
+    try {
+      const wasAdded = await registerVehicle(newVehicle);
+      newVehicleInput.value = '';
+      alert(wasAdded ? 'Veículo cadastrado e selecionado.' : 'Esse veículo já estava cadastrado e foi selecionado.');
+    } catch (error) { alert(`Falha ao cadastrar veículo: ${error.message}`); }
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initializeAuth();
+  initializeAuth().catch((error) => { console.error(error); alert(`Erro ao conectar com Supabase: ${error.message}`); });
   clearChecklistStatuses();
   updateChecklistCompletion();
   setCurrentDateTime();
   renderVehicleOptions();
   updatePhotoRequirement();
   initializeSignaturePad();
-  hydrateSyncQueueFromHistory();
+  if (!supabaseClient) hydrateSyncQueueFromHistory();
   renderHistory();
   registerOfflineSupport();
-  syncPendingInspections();
+  if (!supabaseClient) syncPendingInspections();
 });

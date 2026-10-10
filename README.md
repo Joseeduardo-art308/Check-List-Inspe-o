@@ -1,5 +1,19 @@
 # Documento de Requisitos — Sistema de Inspeção e Manutenção da Frota
 
+## Configuração do Supabase
+
+1. Execute [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor do projeto Supabase.
+2. Em `supabase-config.js`, preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` com a URL e a chave pública (anon/publishable) do projeto. Nunca use a chave `service_role` no navegador.
+3. Publique os arquivos em um servidor HTTP/HTTPS (abrir `index.html` via `file://` não é suportado).
+4. O app autentica pelo Supabase Auth e consulta o perfil em `public.perfis`. Como a interface pede nome de usuário, a autenticação usa o endereço interno `<usuario em minúsculas>@fleet.local`; configure o projeto para não exigir confirmação por e-mail para esse fluxo, ou implemente um fluxo de convite/recuperação com endereço real.
+5. Cadastre veículos diretamente em `public.veiculos` por um usuário administrador/supervisor. O cliente lista veículos ativos; a política RLS do esquema bloqueia cadastro por outros perfis.
+
+Para criar a conta de demonstração no SQL Editor, execute [`supabase/usuario-teste.sql`](supabase/usuario-teste.sql) depois do esquema. Entre usando o e-mail `eduardogomes509@gmail.com` e a senha informada para teste.
+
+O navegador grava inspeções em `inspecoes`, respostas em `resultados_checklist`, anexos em `fotos_inspecao` e arquivos no bucket privado `inspection-evidence`. Itens “Não OK” também criam uma linha em `solicitacoes_manutencao`. Não há armazenamento local de senhas.
+
+Observação: gerenciamento administrativo de contas Auth (criar usuário, redefinir senha e desativar login) precisa ser implementado por função de servidor usando a Admin API do Supabase. O cliente não expõe esse fluxo para evitar colocar credenciais privilegiadas no navegador.
+
 ## 1. Objetivo
 O presente documento estabelece os requisitos funcionais para o desenvolvimento de um sistema de inspeção e manutenção da frota, com foco no controle de checklists de caminhões, registro de ocorrências, acompanhamento de manutenção e geração de relatórios.
 
