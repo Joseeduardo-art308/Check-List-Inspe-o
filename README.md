@@ -10,6 +10,8 @@
 
 Para criar a conta de demonstração no SQL Editor, execute [`supabase/usuario-teste.sql`](supabase/usuario-teste.sql) depois do esquema. Entre usando o e-mail `eduardogomes509@gmail.com` e a senha de teste definida no arquivo SQL.
 
+Para cadastrar/reativar a placa de teste `OGT-8896` em um projeto que já executou o esquema, execute [`supabase/veiculo-teste.sql`](supabase/veiculo-teste.sql) no SQL Editor. O checklist seleciona essa placa por padrão quando ela está cadastrada e ativa.
+
 O navegador grava inspeções em `inspecoes`, respostas em `resultados_checklist`, anexos em `fotos_inspecao` e arquivos no bucket privado `inspection-evidence`. Itens “Não OK” também criam uma linha em `solicitacoes_manutencao`. Não há armazenamento local de senhas.
 
 Observação: gerenciamento administrativo de contas Auth (criar usuário, redefinir senha e desativar login) precisa ser implementado por função de servidor usando a Admin API do Supabase. O cliente não expõe esse fluxo para evitar colocar credenciais privilegiadas no navegador.

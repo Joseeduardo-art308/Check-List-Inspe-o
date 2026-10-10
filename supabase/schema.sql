@@ -91,6 +91,8 @@ create table if not exists public.veiculos (
   atualizado_em timestamptz not null default now(),
   check (length(btrim(identificacao)) > 0)
 );
+insert into public.veiculos (identificacao) values ('OGT-8896')
+on conflict (identificacao) do update set ativo = true;
 drop trigger if exists vehicles_touch_updated_at on public.veiculos;
 create trigger vehicles_touch_updated_at before update on public.veiculos
 for each row execute procedure public.atualizar_data_modificacao();

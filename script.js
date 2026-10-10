@@ -620,7 +620,7 @@ async function loadVehicles() {
   const { data, error } = await supabaseClient.from('veiculos').select('id,identificacao').eq('ativo', true).order('identificacao');
   if (error) throw error;
   vehiclesById = new Map((data || []).map((vehicle) => [vehicle.identificacao, vehicle]));
-  renderVehicleOptions(document.getElementById('vehicle')?.value || '');
+  renderVehicleOptions(document.getElementById('vehicle')?.value || 'OGT-8896');
 }
 
 async function registerVehicle(vehicle, selectAfterAdding = true) {
