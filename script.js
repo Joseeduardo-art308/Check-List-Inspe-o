@@ -268,7 +268,7 @@ async function loadCurrentProfile() {
   await loadInspectionHistory();
   restoreDraft();
   const vehicleSelect = document.getElementById('vehicle');
-  if (vehicleSelect) vehicleSelect.value = '';
+  if (vehicleSelect) vehicleSelect.selectedIndex = 0;
 }
 
 function openUserManagement() {
@@ -613,7 +613,7 @@ function renderVehicleOptions(selectedVehicle = '') {
   if (!vehicleSelect) return;
 
   const vehicles = getStoredVehicles();
-  vehicleSelect.innerHTML = '<option value="">Selecione um veículo cadastrado</option>';
+  vehicleSelect.innerHTML = '<option value="" selected>Selecione um veículo cadastrado</option>';
   vehicles.forEach((vehicle) => {
     const option = document.createElement('option');
     option.value = vehicle;
@@ -623,6 +623,8 @@ function renderVehicleOptions(selectedVehicle = '') {
 
   if (vehicles.includes(selectedVehicle)) {
     vehicleSelect.value = selectedVehicle;
+  } else {
+    vehicleSelect.selectedIndex = 0;
   }
 }
 
@@ -863,7 +865,7 @@ function restoreDraft() {
     else if (control.type === 'checkbox') control.checked = Boolean(draft.values[control.name]);
     else control.value = draft.values[control.name];
   }
-  if (form.elements.vehicle) form.elements.vehicle.value = '';
+  if (form.elements.vehicle) form.elements.vehicle.selectedIndex = 0;
   if (draft.signature) {
     const canvas = document.getElementById('signaturePad');
     const image = new Image();
