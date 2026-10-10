@@ -127,7 +127,7 @@ function isAdministrator(user) {
 }
 
 function canManageVehicles(user) {
-  const role = String(user?.role || '').trim().toLocaleLowerCase('pt-BR');
+  const role = String(user?.role || user?.perfil_acesso || '').trim().toLocaleLowerCase('pt-BR');
   return role === 'administrador' || role === 'supervisor';
 }
 
