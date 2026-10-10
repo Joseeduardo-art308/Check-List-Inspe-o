@@ -267,6 +267,8 @@ async function loadCurrentProfile() {
   await loadVehicles();
   await loadInspectionHistory();
   restoreDraft();
+  const vehicleSelect = document.getElementById('vehicle');
+  if (vehicleSelect) vehicleSelect.value = '';
 }
 
 function openUserManagement() {
@@ -628,7 +630,7 @@ async function loadVehicles() {
   const { data, error } = await supabaseClient.from('veiculos').select('id,identificacao').eq('ativo', true).order('identificacao');
   if (error) throw error;
   vehiclesById = new Map((data || []).map((vehicle) => [vehicle.identificacao, vehicle]));
-  renderVehicleOptions(document.getElementById('vehicle')?.value || '');
+  renderVehicleOptions();
 }
 
 async function registerVehicle(vehicle, selectAfterAdding = true) {
@@ -856,11 +858,12 @@ function restoreDraft() {
   try { draft = JSON.parse(localStorage.getItem(getDraftStorageKey()) || 'null'); } catch { return; }
   if (!draft?.values) return;
   for (const control of form.elements) {
-    if (!control.name || !(control.name in draft.values) || control.type === 'file') continue;
+    if (!control.name || control.name === 'vehicle' || !(control.name in draft.values) || control.type === 'file') continue;
     if (control.type === 'radio') control.checked = control.value === draft.values[control.name];
     else if (control.type === 'checkbox') control.checked = Boolean(draft.values[control.name]);
     else control.value = draft.values[control.name];
   }
+  if (form.elements.vehicle) form.elements.vehicle.value = '';
   if (draft.signature) {
     const canvas = document.getElementById('signaturePad');
     const image = new Image();
