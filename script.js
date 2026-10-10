@@ -733,13 +733,13 @@ async function syncPendingInspections() {
 
 async function loadInspectionHistory() {
   const { data, error } = await supabaseClient.from('inspecoes')
-    .select('id,inspecionado_em,leitura_medidor,local_inspecao,severidade,nome_operador_registrado,veiculos(identificacao),resultados_checklist(situacao)')
+    .select('id,inspecionado_em,leitura_medidor,local_inspecao,severidade,caminho_assinatura,veiculos(identificacao),resultados_checklist(situacao)')
     .order('inspecionado_em', { ascending: false }).limit(30);
   if (error) throw error;
   const history = (data || []).map((row) => ({ id: row.id, vehicle: row.veiculos?.identificacao || '—',
     date: new Date(row.inspecionado_em).toLocaleDateString('pt-BR'), time: new Date(row.inspecionado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     meterReading: row.leitura_medidor, location: row.local_inspecao, severity: row.severidade,
-    hasIssue: row.resultados_checklist.some((item) => item.situacao === 'nao_ok'), syncStatus: 'synced' }));
+    hasIssue: row.resultados_checklist.some((item) => item.situacao === 'nao_ok'), signature: Boolean(row.caminho_assinatura), syncStatus: 'synced' }));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   renderHistory();
 }
