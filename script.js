@@ -1373,6 +1373,11 @@ if (form) {
   });
 }
 
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveDraft();
+});
+window.addEventListener('pagehide', saveDraft);
+
 if (generateReportButton) {
   generateReportButton.addEventListener('click', () => {
     if (!checklistSaved) {
