@@ -25,6 +25,7 @@ const VEHICLES_KEY = 'fleetVehicles';
 const USERS_KEY = 'fleetUsers';
 const ACTIVE_USER_KEY = 'fleetActiveUser';
 const SYNC_QUEUE_KEY = 'fleetChecklistSyncQueue';
+const DRAFT_KEY = 'fleetChecklistDraft';
 const supabaseClient = window.supabase?.createClient && window.SUPABASE_URL && window.SUPABASE_ANON_KEY
   ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
   : null;
@@ -259,6 +260,7 @@ async function loadCurrentProfile() {
     role: data.perfil_acesso, active: true });
   await loadVehicles();
   await loadInspectionHistory();
+  restoreDraft();
 }
 
 function openUserManagement() {
@@ -812,6 +814,58 @@ function clearForm() {
   if (defaultLocation) {
     defaultLocation.value = 'Pátio';
   }
+  localStorage.removeItem(getDraftStorageKey());
+}
+
+function getDraftStorageKey() {
+  return `${DRAFT_KEY}:${currentProfile?.id || 'anonymous'}`;
+}
+
+function saveDraft() {
+  if (!form || !currentProfile) return;
+  const values = {};
+  for (const control of form.elements) {
+    if (!control.name || control.type === 'file' || control.type === 'submit' || control.type === 'button') continue;
+    if (control.type === 'radio') {
+      if (control.checked) values[control.name] = control.value;
+    } else if (control.type === 'checkbox') {
+      values[control.name] = control.checked;
+    } else {
+      values[control.name] = control.value;
+    }
+  }
+  const signatureCanvas = document.getElementById('signaturePad');
+  localStorage.setItem(getDraftStorageKey(), JSON.stringify({
+    savedAt: new Date().toISOString(), values,
+    signature: signatureDrawn ? signatureCanvas.toDataURL('image/png') : null
+  }));
+}
+
+function restoreDraft() {
+  if (!form || !currentProfile) return;
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(getDraftStorageKey()) || 'null'); } catch { return; }
+  if (!draft?.values) return;
+  for (const control of form.elements) {
+    if (!control.name || !(control.name in draft.values) || control.type === 'file') continue;
+    if (control.type === 'radio') control.checked = control.value === draft.values[control.name];
+    else if (control.type === 'checkbox') control.checked = Boolean(draft.values[control.name]);
+    else control.value = draft.values[control.name];
+  }
+  if (draft.signature) {
+    const canvas = document.getElementById('signaturePad');
+    const image = new Image();
+    image.onload = () => {
+      const bounds = canvas.getBoundingClientRect();
+      signatureContext.drawImage(image, 0, 0, bounds.width || 600, 180);
+      signatureDrawn = true;
+      updateSignatureStatus();
+    };
+    image.src = draft.signature;
+  }
+  updatePhotoRequirement();
+  updateChecklistCompletion();
+  if (connectionStatus) connectionStatus.textContent = 'Rascunho recuperado. Se havia fotos anexadas, selecione-as novamente.';
 }
 
 function getPhotoNames() {
@@ -923,6 +977,7 @@ function initializeSignaturePad() {
     signatureDrawn = true;
     lastPoint = point;
     updateSignatureStatus();
+    saveDraft();
   });
   const stopDrawing = () => { drawing = false; lastPoint = null; };
   canvas.addEventListener('pointerup', stopDrawing);
@@ -1231,7 +1286,9 @@ if (form) {
     if (event.target.matches('input[type="radio"]')) {
       updateChecklistCompletion();
     }
+    saveDraft();
   });
+  form.addEventListener('input', saveDraft);
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1300,6 +1357,7 @@ if (form) {
       alert(`Falha ao salvar no Supabase: ${error.message}`);
       return;
     }
+    localStorage.removeItem(getDraftStorageKey());
     renderHistory();
     buildReport();
     alert('Inspeção salva com sucesso!');
@@ -1361,4 +1419,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
   registerOfflineSupport();
   if (!supabaseClient) syncPendingInspections();
+});
+
+window.addEventListener('beforeunload', (event) => {
+  if (!currentProfile || !localStorage.getItem(getDraftStorageKey())) return;
+  event.preventDefault();
+  event.returnValue = '';
 });

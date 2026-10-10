@@ -1,9 +1,10 @@
-const CACHE_NAME = 'fleet-checklist-v4';
+const CACHE_NAME = 'fleet-checklist-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css',
   './script.js',
+  './supabase-config.js',
   './manifest.webmanifest',
   './icon.svg'
 ];
