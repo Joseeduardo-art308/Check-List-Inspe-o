@@ -964,8 +964,13 @@ function initializeSignaturePad() {
     canvas.setPointerCapture(event.pointerId);
     const rect = canvas.getBoundingClientRect();
     lastPoint = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    signatureDrawn = true;
     signatureContext.beginPath();
     signatureContext.moveTo(lastPoint.x, lastPoint.y);
+    signatureContext.lineTo(lastPoint.x + 0.1, lastPoint.y + 0.1);
+    signatureContext.stroke();
+    updateSignatureStatus();
+    saveDraft();
   });
   canvas.addEventListener('pointermove', (event) => {
     if (!drawing) return;
@@ -979,7 +984,11 @@ function initializeSignaturePad() {
     updateSignatureStatus();
     saveDraft();
   });
-  const stopDrawing = () => { drawing = false; lastPoint = null; };
+  const stopDrawing = () => {
+    if (drawing) saveDraft();
+    drawing = false;
+    lastPoint = null;
+  };
   canvas.addEventListener('pointerup', stopDrawing);
   canvas.addEventListener('pointercancel', stopDrawing);
 }
