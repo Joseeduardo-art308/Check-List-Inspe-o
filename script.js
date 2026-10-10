@@ -126,6 +126,11 @@ function isAdministrator(user) {
   return String(user?.role || '').trim().toLocaleLowerCase('pt-BR') === 'administrador';
 }
 
+function canManageVehicles(user) {
+  const role = String(user?.role || '').trim().toLocaleLowerCase('pt-BR');
+  return role === 'administrador' || role === 'supervisor';
+}
+
 function updateActiveUserDisplay(user) {
   const sessionUser = {
     id: user.id,
@@ -140,6 +145,7 @@ function updateActiveUserDisplay(user) {
   if (userManagementButton) {
     userManagementButton.classList.add('hidden'); // criação de usuários exige fluxo administrativo no servidor
   }
+  document.querySelector('.vehicle-registration')?.classList.toggle('hidden', !canManageVehicles(user));
   const operatorInput = document.getElementById('operator');
   if (operatorInput) {
     operatorInput.value = user.name || user.username || '';
@@ -630,6 +636,9 @@ async function registerVehicle(vehicle, selectAfterAdding = true) {
   if (!normalizedVehicle) return false;
 
   if (supabaseClient) {
+    if (!canManageVehicles(currentProfile)) {
+      throw new Error('Somente administrador ou supervisor pode cadastrar veículos.');
+    }
     const found = [...vehiclesById.values()].find((item) => item.identificacao.toLocaleLowerCase('pt-BR') === normalizedVehicle.toLocaleLowerCase('pt-BR'));
     if (!found) {
       const { data, error } = await supabaseClient.from('veiculos').insert({ identificacao: normalizedVehicle, criado_por: currentProfile.id }).select('id,identificacao').single();
@@ -1405,6 +1414,10 @@ if (clearSignatureButton) {
 const addVehicleButton = document.getElementById('addVehicle');
 if (addVehicleButton) {
   addVehicleButton.addEventListener('click', async () => {
+    if (!canManageVehicles(currentProfile)) {
+      alert('Somente administrador ou supervisor pode cadastrar veículos.');
+      return;
+    }
     const newVehicleInput = document.getElementById('newVehicle');
     const newVehicle = newVehicleInput.value.trim();
     if (!newVehicle) {
