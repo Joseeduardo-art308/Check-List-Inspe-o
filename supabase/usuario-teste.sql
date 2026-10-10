@@ -32,7 +32,7 @@ begin
     update auth.users
     set email = test_email,
         encrypted_password = extensions.crypt('J10259933j', extensions.gen_salt('bf')),
-        email_confirmed_at = coalesce(email_confirmed_at, now()),
+        email_confirmed_at = now(),
         raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
         raw_user_meta_data = '{"username":"eduardogomes509@gmail.com","display_name":"Eduardo Gomes","role":"operador"}'::jsonb,
         updated_at = now()
