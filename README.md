@@ -8,7 +8,7 @@
 4. O app autentica pelo Supabase Auth e consulta o perfil em `public.perfis`. Como a interface pede nome de usuário, a autenticação usa o endereço interno `<usuario em minúsculas>@fleet.local`; configure o projeto para não exigir confirmação por e-mail para esse fluxo, ou implemente um fluxo de convite/recuperação com endereço real.
 5. Cadastre veículos diretamente em `public.veiculos` por um usuário administrador/supervisor. O cliente lista veículos ativos; a política RLS do esquema bloqueia cadastro por outros perfis.
 
-Para criar a conta de demonstração no SQL Editor, execute [`supabase/usuario-teste.sql`](supabase/usuario-teste.sql) depois do esquema. Entre usando o e-mail `eduardogomes509@gmail.com` e a senha informada para teste.
+Para criar a conta de demonstração no SQL Editor, execute [`supabase/usuario-teste.sql`](supabase/usuario-teste.sql) depois do esquema. Entre usando o e-mail `eduardogomes509@gmail.com` e a senha de teste definida no arquivo SQL.
 
 O navegador grava inspeções em `inspecoes`, respostas em `resultados_checklist`, anexos em `fotos_inspecao` e arquivos no bucket privado `inspection-evidence`. Itens “Não OK” também criam uma linha em `solicitacoes_manutencao`. Não há armazenamento local de senhas.
 
