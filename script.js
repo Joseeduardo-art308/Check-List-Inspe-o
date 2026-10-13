@@ -627,6 +627,7 @@ function renderVehicleOptions(selectedVehicle = '') {
   } else {
     vehicleSelect.selectedIndex = 0;
   }
+  renderHistory();
 }
 
 async function loadVehicles() {
