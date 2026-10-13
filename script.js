@@ -670,10 +670,19 @@ function renderHistory() {
     return;
   }
 
-  const history = getStoredHistory();
+  const selectedVehicle = document.getElementById('vehicle')?.value.trim();
+  if (!selectedVehicle) {
+    historyList.innerHTML = '<div class="history-item"><strong>Selecione uma placa para consultar o histórico.</strong></div>';
+    return;
+  }
+
+  const normalizedVehicle = selectedVehicle.toLocaleLowerCase('pt-BR');
+  const history = getStoredHistory().filter((item) =>
+    String(item.vehicle || '').trim().toLocaleLowerCase('pt-BR') === normalizedVehicle
+  );
 
   if (!history.length) {
-    historyList.innerHTML = '<div class="history-item"><strong>Nenhuma inspeção salva ainda.</strong><div class="history-meta">Os registros aparecerão aqui após o primeiro envio.</div></div>';
+    historyList.innerHTML = `<div class="history-item"><strong>Nenhuma inspeção salva para ${selectedVehicle}.</strong><div class="history-meta">As inspeções desta placa aparecerão aqui após o primeiro envio.</div></div>`;
     return;
   }
 
@@ -693,6 +702,8 @@ function renderHistory() {
     })
     .join('');
 }
+
+document.getElementById('vehicle')?.addEventListener('change', renderHistory);
 
 async function syncPendingInspections() {
   if (supabaseClient) { updateConnectionStatus(); return true; }
