@@ -16,6 +16,7 @@ const userForm = document.getElementById('userForm');
 const managedUsersList = document.getElementById('managedUsersList');
 const form = document.getElementById('inspectionForm');
 const reportOutput = document.getElementById('reportOutput');
+const printReportButton = document.getElementById('printReport');
 const generateReportButton = document.getElementById('generateReport');
 const clearFormButton = document.getElementById('clearForm');
 const historyList = document.getElementById('historyList');
@@ -1113,6 +1114,7 @@ ${photoNames}
 `;
 
   reportOutput.textContent = report;
+  if (printReportButton) printReportButton.disabled = false;
   reportOutput.classList.remove('alert', 'ok');
 
   if (hasIssue) {
@@ -1401,6 +1403,13 @@ if (generateReportButton) {
 
     buildReport();
     alert('Relatório gerado com sucesso!');
+  });
+}
+
+if (printReportButton) {
+  printReportButton.addEventListener('click', () => {
+    if (!reportOutput?.textContent.trim()) return;
+    window.print();
   });
 }
 
