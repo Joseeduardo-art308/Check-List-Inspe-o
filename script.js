@@ -1408,8 +1408,31 @@ if (generateReportButton) {
 
 if (printReportButton) {
   printReportButton.addEventListener('click', () => {
-    if (!reportOutput?.textContent.trim()) return;
-    window.print();
+    const report = reportOutput?.textContent.trim();
+    if (!report) return;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      alert('O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.');
+      return;
+    }
+
+    const safeReport = report.replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+    printWindow.document.open();
+    printWindow.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de inspeção</title><style>
+      @page { margin: 18mm; }
+      body { font: 12pt/1.6 Arial, Helvetica, sans-serif; color: #111; }
+      h1 { font-size: 18pt; margin: 0 0 18px; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+    </style></head><body><h1>Relatório de inspeção</h1><pre>${safeReport}</pre></body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    window.setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 250);
   });
 }
 
